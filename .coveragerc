@@ -1,0 +1,25 @@
+[run]
+branch = True
+concurrency = multiprocessing
+data_file = .coverage
+source_pkgs =
+    onsetpy
+relative_files = True
+omit =
+    onsetpy/version.py
+    setup.py
+    onsetpy/**/tests/*.py
+
+[report]
+skip_empty = True
+skip_covered = True
+exclude_also =
+    if __name__ == "__main__":
+    (?<!def )main()
+
+[html]
+title = Onsetpy Coverage Report
+directory = .test_reports/coverage.html
+
+[xml]
+output = .test_reports/coverage.xml
