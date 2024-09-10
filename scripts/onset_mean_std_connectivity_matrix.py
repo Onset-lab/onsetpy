@@ -76,7 +76,9 @@ def main():
     save_matrix(mean_matrix, args.out_mean)
     save_matrix(std_matrix, args.out_std)
 
-    logging.info(f"Number of connectivity matrices processed: {len(control_matrices)}")
+    logging.info(
+        f"Numberssssssssssssssss of connectivity matrices processed: {len(control_matrices)}"
+    )
     logging.info(f"Shape of mean and std matrices: {mean_matrix.shape}")
     logging.info(f"Results saved in: {args.out_mean} and {args.out_std}")
 
