@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Calculate mean and std connectivity matrices from multiple connectivity matrices.
+Compute mean and std connectivity matrices from multiple connectivity matrices.
 """
 
 import argparse

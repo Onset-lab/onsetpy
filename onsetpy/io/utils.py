@@ -56,8 +56,8 @@ def assert_inputs_exist(
 
     for required_file in required:
         _check(required_file)
-    for optional_file in optional or []:
-        if optional_file is not None:
+    if optional is not None:
+        for optional_file in optional:
             _check(optional_file)
 
 
@@ -127,8 +127,7 @@ def assert_outputs_exist(
     for required_file in required:
         check(required_file)
     for optional_file in optional or []:
-        if optional_file:
-            check(optional_file)
+        check(optional_file)
 
 
 def assert_matrices_compatible(parser: ArgumentParser, matrices: np.ndarray) -> None:
