@@ -48,7 +48,6 @@ jobs:
           name: test-coverage-${{ github.run_id }}
           retention-days: 1
           path: |
-            .coverage
             .test_reports/
 
   coverage:
