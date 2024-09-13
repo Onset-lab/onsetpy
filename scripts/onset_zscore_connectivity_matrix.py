@@ -72,7 +72,7 @@ def main():
     logging.getLogger().setLevel(logging.getLevelName(args.verbose))
 
     assert_inputs_exist(parser, [args.mean, args.std] + args.base_matrices)
-    
+
     mean_matrix = load_matrix(args.mean)
     std_matrix = load_matrix(args.std)
     base_matrices = load_matrix(args.base_matrices)
@@ -80,7 +80,7 @@ def main():
     assert_matrices_compatible(parser, [mean_matrix, std_matrix] + base_matrices)
 
     z_score_matrices = calculate_z_scores(mean_matrix, std_matrix, base_matrices)
-    
+
     output_files = [f"{args.out_prefix}_{i+1}.npy" for i in range(len(z_score_matrices))]
     assert_outputs_exist(parser, args, output_files)
 
@@ -94,3 +94,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
