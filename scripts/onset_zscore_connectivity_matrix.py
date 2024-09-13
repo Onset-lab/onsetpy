@@ -19,7 +19,9 @@ from onsetpy.io.utils import (
 )
 
 
-def calculate_z_scores(mean_matrix: np.ndarray, std_matrix: np.ndarray, base_matrices: List[np.ndarray]) -> List[np.ndarray]:
+def calculate_z_scores(
+    mean_matrix: np.ndarray, std_matrix: np.ndarray, base_matrices: List[np.ndarray]
+) -> List[np.ndarray]:
     """Compute z-score matrices for each base matrix.
 
     Args:
@@ -50,7 +52,9 @@ def _build_arg_parser():
         "--mean", required=True, help="Path to the mean connectivity matrix in .npy format"
     )
     parser.add_argument(
-        "--std", required=True, help="Path to the standard deviation connectivity matrix in .npy format"
+        "--std",
+        required=True,
+        help="Path to the standard deviation connectivity matrix in .npy format",
     )
     parser.add_argument(
         "base_matrices", nargs="+", help="Paths to the base connectivity matrices in .npy format"
@@ -94,4 +98,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
