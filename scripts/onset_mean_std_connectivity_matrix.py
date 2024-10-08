@@ -7,7 +7,7 @@ Compute mean and std connectivity matrices from multiple connectivity matrices.
 import argparse
 import logging
 import numpy as np
-from typing import List
+from typing import List, Tuple
 
 from onsetpy.io.matrix import save_matrix, load_matrix
 from onsetpy.io.utils import (
@@ -19,7 +19,7 @@ from onsetpy.io.utils import (
 )
 
 
-def calculate_stats(matrices: List[np.ndarray]) -> List[np.ndarray, np.ndarray]:
+def calculate_stats(matrices: List[np.ndarray]) -> Tuple[np.ndarray, np.ndarray]:
     """Compute mean and std connectivity matrices.
 
     Args:
