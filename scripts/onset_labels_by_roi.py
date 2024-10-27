@@ -53,8 +53,9 @@ def analyze_mask_overlap(labels_file, masks_folder):
             percentages = counts / len(mask_voxels)
 
             # Create percentage breakdown string (including 0)
-            breakdown = '+'.join([f"{p:.3f}*{int(label)}" 
-                                for p, label in zip(percentages, unique_labels)])
+            breakdown = '+'.join(
+                [f"{p:.3f}*{int(label)}" for p, label in zip(percentages, unique_labels)]
+            )
 
             # Get non-zero labels and their percentages
             non_zero_mask = unique_labels != 0
@@ -99,10 +100,13 @@ def analyze_mask_overlap(labels_file, masks_folder):
 def main():
     # Set up argument parser
     parser = argparse.ArgumentParser(
-        description='Analyze ROI mask overlaps with labeled data')
+        description='Analyze ROI mask overlaps with labeled data'
+    )
     parser.add_argument('labels_file', help='Path to the labels.nii.gz file')
-    parser.add_argument('masks_folder', 
-                       help='Path to the folder containing mask files')
+    parser.add_argument(
+        'masks_folder',
+        help='Path to the folder containing mask files'
+    )
 
     # Parse arguments
     args = parser.parse_args()
