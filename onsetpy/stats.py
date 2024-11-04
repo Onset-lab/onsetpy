@@ -24,7 +24,6 @@ def calculate_z_scores(
     Raises:
         ValueError: If matrices have incompatible shapes or if std contains zeros.
     """
-    # Input validation
     if not all(isinstance(m, np.ndarray) for m in [mean_matrix, std_matrix] + base_matrices):
         raise TypeError("All inputs must be numpy arrays")
     
