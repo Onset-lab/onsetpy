@@ -26,10 +26,8 @@ def calculate_z_scores(
     """
     if not all(isinstance(m, np.ndarray) for m in [mean_matrix, std_matrix] + base_matrices):
         raise TypeError("All inputs must be numpy arrays")
-    
     if not all(m.shape == mean_matrix.shape for m in [std_matrix] + base_matrices):
         raise ValueError("All matrices must have the same shape")
-        
     if np.any(std_matrix == 0):
         raise ValueError("Standard deviation matrix contains zeros")
 
