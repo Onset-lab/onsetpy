@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from onsetpy.stats import calculate_z_scores
+from onsetpy.io.stats import calculate_z_scores
 
 
 class TestZScoreFunctions(unittest.TestCase):
