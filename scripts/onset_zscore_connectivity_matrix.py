@@ -15,7 +15,7 @@ from onsetpy.io.utils import (
     assert_matrices_compatible,
     assert_outputs_exist,
 )
-from onsetpy.stats import calculate_z_scores
+from onsetpy.io.stats import calculate_z_scores  # Updated import path
 
 
 def _build_arg_parser():
