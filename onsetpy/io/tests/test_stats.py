@@ -1,16 +1,17 @@
 import unittest
 import numpy as np
-from onsetpy.io.stats import calculate_z_scores
+from onsetpy.stats import calculate_z_scores
 
 
 class TestZScoreFunctions(unittest.TestCase):
-
     def setUp(self):
         # Create sample matrices for testing
         self.mean_matrix = np.array([[1.0, 2.0], [2.0, 3.0]])
         self.std_matrix = np.array([[0.5, 1.0], [1.0, 0.5]])
         self.base_matrix1 = np.array([[2.0, 4.0], [4.0, 4.0]])
         self.base_matrix2 = np.array([[0.0, 0.0], [0.0, 2.0]])
+        
+        # Expected z-scores for the test cases
         self.expected_z1 = np.array([[2.0, 2.0], [2.0, 2.0]])
         self.expected_z2 = np.array([[-2.0, -2.0], [-2.0, -2.0]])
 
