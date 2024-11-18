@@ -19,7 +19,9 @@ from onsetpy.io.utils import (
 )
 
 
-def calculate_z_scores(mean_matrix: np.ndarray, std_matrix: np.ndarray, base_matrices: List[np.ndarray]) -> List[np.ndarray]:
+def calculate_z_scores(
+    mean_matrix: np.ndarray, std_matrix: np.ndarray, base_matrices: List[np.ndarray]
+) -> List[np.ndarray]:
     """Compute z-score matrices for each base matrix.
 
     Args:
@@ -47,13 +49,19 @@ def _build_arg_parser():
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument(
-        "--mean", required=True, help="Path to the mean connectivity matrix in .npy format"
+        "--mean",
+        required=True,
+        help="Path to the mean connectivity matrix in .npy format",
     )
     parser.add_argument(
-        "--std", required=True, help="Path to the standard deviation connectivity matrix in .npy format"
+        "--std",
+        required=True,
+        help="Path to the standard deviation connectivity matrix in .npy format",
     )
     parser.add_argument(
-        "base_matrices", nargs="+", help="Paths to the base connectivity matrices in .npy format"
+        "base_matrices",
+        nargs="+",
+        help="Paths to the base connectivity matrices in .npy format",
     )
     parser.add_argument(
         "--out_prefix",
@@ -81,7 +89,9 @@ def main():
 
     z_score_matrices = calculate_z_scores(mean_matrix, std_matrix, base_matrices)
 
-    output_files = [f"{args.out_prefix}_{i+1}.npy" for i in range(len(z_score_matrices))]
+    output_files = [
+        f"{args.out_prefix}_{i+1}.npy" for i in range(len(z_score_matrices))
+    ]
     assert_outputs_exist(parser, args, output_files)
 
     for i, z_score_matrix in enumerate(z_score_matrices):
@@ -94,4 +104,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
