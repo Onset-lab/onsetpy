@@ -8,7 +8,8 @@ class TestGridviewUtils(unittest.TestCase):
     @patch(
         "builtins.open",
         new_callable=mock_open,
-        read_data="Image cube size: 256\t256\t256\nImage cube resolution: 1.0\t1.0\t1.0\nGroup: A\nA1: 10\t20\t30\tannotation1\nA2: 40\t50\t60\tannotation2\nA3:              \n",
+        read_data="Image cube size: 256\t256\t256\nImage cube resolution: 1.0\t1.0\t1.0\nGroup: \
+            A\nA1: 10\t20\t30\tannotation1\nA2: 40\t50\t60\tannotation2\nA3:              \n",
     )
     def test_parse_gridview_file(self, mock_file):
         expected_electrodes = {

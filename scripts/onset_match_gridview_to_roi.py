@@ -4,6 +4,7 @@
 Match electrodes to masks and create labels mask from gridview txt file.
 
 In the output directory, a labels mask and masks of each electrode will be saved as NIfTI files.
+The electrode names and IDs will be saved in a lookup table.
 """
 
 import argparse
@@ -107,7 +108,8 @@ def main():
                         labels[mask_data == 1] = electrode_id
                         lut_dict[electrode_id] = contact["name"]
                         log.write(
-                            f"{contact['name']:<10} {mask_name:<20} {str(transformed_coords):<20} {electrode_id:<20}\n"
+                            f"{contact['name']:<10} {mask_name:<20} {str(transformed_coords):<20} "
+                            f"{electrode_id:<20}\n"
                         )
 
                         mask_img = nib.Nifti1Image(mask_data, ref_img.affine)
