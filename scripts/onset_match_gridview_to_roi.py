@@ -2,6 +2,8 @@
 
 """
 Match electrodes to masks and create labels mask from gridview txt file.
+
+In the output directory, a labels mask and masks of each electrode will be saved as NIfTI files.
 """
 
 import argparse

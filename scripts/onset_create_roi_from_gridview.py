@@ -2,6 +2,9 @@
 
 """
 Transform electrode coordinates and create masks from gridview txt file.
+
+In the output directory, a labels mask and masks of each electrode will be saved as NIfTI files.
+The electrode names and IDs will be saved in a lookup table.
 """
 
 import argparse
