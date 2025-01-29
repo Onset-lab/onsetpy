@@ -7,8 +7,8 @@ Convert Freesurfer cortical thickness statistics to CSV format.
 import argparse
 import pandas as pd
 from onsetpy.io.utils import (
-    add_verbose_arg,
     add_overwrite_arg,
+    add_version_arg,
     assert_inputs_exist,
     assert_outputs_exist,
 )
@@ -32,8 +32,8 @@ def _build_arg_parser():
 
     parser.add_argument("--sid", help="Subject ID")
 
-    add_verbose_arg(parser)
     add_overwrite_arg(parser)
+    add_version_arg(parser)
     return parser
 
 

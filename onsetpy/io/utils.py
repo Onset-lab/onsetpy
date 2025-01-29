@@ -1,8 +1,11 @@
+import importlib.metadata
 import os
 from typing import Union, List
 
 from argparse import ArgumentParser, Namespace
 import numpy as np
+
+__version__ = importlib.metadata.version("onsetpy")
 
 
 def add_verbose_arg(parser: ArgumentParser) -> None:
@@ -143,3 +146,17 @@ def assert_matrices_compatible(parser: ArgumentParser, matrices: np.ndarray) -> 
             parser.error(
                 "Matrices do not have the same shape. Please verify your input data."
             )
+
+
+def add_version_arg(parser: ArgumentParser) -> None:
+    """
+    Adds a version argument to the given argument parser.
+
+    This function adds a '--version' argument to the provided parser, which
+    will display the version of the program when specified.
+
+    Args:
+        parser (argparse.ArgumentParser): The argument parser to which the
+        version argument will be added.
+    """
+    parser.add_argument("--version", action="version", version=__version__)

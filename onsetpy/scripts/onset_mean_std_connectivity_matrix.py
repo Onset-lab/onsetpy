@@ -13,6 +13,7 @@ from onsetpy.io.matrix import save_matrix, load_matrix
 from onsetpy.io.utils import (
     add_verbose_arg,
     add_overwrite_arg,
+    add_version_arg,
     assert_inputs_exist,
     assert_matrices_compatible,
     assert_outputs_exist,
@@ -58,6 +59,7 @@ def _build_arg_parser():
 
     add_verbose_arg(parser)
     add_overwrite_arg(parser)
+    add_version_arg(parser)
     return parser
 
 
