@@ -9,7 +9,7 @@ RUN pip install --upgrade pip
 
 # Install avnirpy
 WORKDIR /
-RUN git clone https://github.com/Onset-lab
+RUN git clone https://github.com/Onset-lab/onsetpy
 WORKDIR /onsetpy
 RUN pip install -e .
 
