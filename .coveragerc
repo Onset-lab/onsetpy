@@ -9,6 +9,7 @@ omit =
     onsetpy/version.py
     setup.py
     onsetpy/**/tests/*.py
+    onsetpy/scripts/*.py
 
 [report]
 skip_empty = True
