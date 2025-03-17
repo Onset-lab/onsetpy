@@ -24,11 +24,23 @@ def _build_arg_parser():
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument(
-        "fs_stats",
-        nargs="+",
-        help="Path to the Freesurfer cortical thickness statistics files",
+        "lh_fs_stats",
+        help="Path to the left hemisphere Freesurfer cortical thickness statistics files",
     )
-    parser.add_argument("output", help="Path to the output CSV file or JSON file")
+    parser.add_argument(
+        "rh_fs_stats",
+        help="Path to the right hemisphere Freesurfer cortical thickness statistics files",
+    )
+    parser.add_argument(
+        "aseg_fs_stats",
+        help="Path to the Freesurfer aseg statistics files",
+    )
+    parser.add_argument(
+        "output_aparc", help="Path to the output aparc CSV file or JSON file"
+    )
+    parser.add_argument(
+        "output_aseg", help="Path to the output aseg CSV file or JSON file"
+    )
 
     parser.add_argument("--sid", help="Subject ID")
 
@@ -41,13 +53,47 @@ def main():
     parser = _build_arg_parser()
     args = parser.parse_args()
 
-    assert_inputs_exist(parser, args.fs_stats)
-    assert_outputs_exist(parser, args, [args.output])
+    assert_inputs_exist(parser, [args.lh_fs_stats, args.rh_fs_stats])
+    assert_outputs_exist(parser, args, [args.output_aparc, args.output_aseg])
 
-    if not args.output.lower().endswith(".csv") and not args.output.lower().endswith(
-        ".json"
-    ):
-        parser.error("Output file must be a CSV or JSON file")
+    names = [
+        "StructName",
+        "NumVert",
+        "SurfArea",
+        "GrayVol",
+        "ThickAvg",
+        "ThickStd",
+        "MeanCurv",
+        "GausCurv",
+        "FoldInd",
+        "CurvInd",
+    ]
+
+    df_list = []
+    for stat, side in zip([args.lh_fs_stats, args.rh_fs_stats], ["left", "right"]):
+        curr_df = pd.read_csv(
+            stat,
+            sep="\s+",
+            comment="#",
+            header=None,
+            names=names,
+        )
+        curr_df["side"] = side
+        df_list.append(curr_df)
+
+    df = pd.concat(df_list, ignore_index=True)
+
+    df.rename(
+        columns={"StructName": "roi", "GrayVol": "volume", "ThickAvg": "thickness"},
+        inplace=True,
+    )
+    df["sid"] = args.sid
+    df = df[["sid", "roi", "side", "volume", "thickness"]]
+
+    if args.output_aparc.endswith(".csv"):
+        df.to_csv(args.output_aparc, index=False)
+    else:
+        df.to_json(args.output_aparc, orient="records", index=False, indent=4)
 
     names = [
         "Index",
@@ -55,38 +101,30 @@ def main():
         "NVoxels",
         "Volume_mm3",
         "StructName",
-        "Mean",
-        "StdDev",
-        "Min",
-        "Max",
-        "Range",
+        "normMean",
+        "normStdDev",
+        "normMin",
+        "normMax",
+        "normRange",
     ]
-
-    df_list = []
-    for i in args.fs_stats:
-        curr_df = pd.read_csv(
-            i,
-            sep="\s+",
-            comment="#",
-            header=None,
-            names=names,
-        )
-        df_list.append(curr_df)
-
-    df = pd.concat(df_list, ignore_index=True)
-    df = (
-        df.loc[df.groupby("SegId")["Mean"].idxmax()]
-        .query("SegId != 0")
-        .sort_values(by="SegId")
+    aseg_df = pd.read_csv(
+        args.aseg_fs_stats,
+        sep="\s+",
+        comment="#",
+        header=None,
+        names=names,
     )
-    df.rename(columns={"SegId": "roi", "Mean": "mean"}, inplace=True)
-    df["sid"] = args.sid
-    df = df[["sid", "roi", "mean"]]
+    aseg_df.rename(
+        columns={"StructName": "roi", "Volume_mm3": "volume"},
+        inplace=True,
+    )
+    aseg_df["sid"] = args.sid
+    aseg_df = aseg_df[["sid", "roi", "volume"]]
 
-    if args.output.endswith(".csv"):
-        df.to_csv(args.output, index=False)
+    if args.output_aseg.endswith(".csv"):
+        aseg_df.to_csv(args.output_aseg, index=False)
     else:
-        df.to_json(args.output, orient="records", index=False, indent=4)
+        aseg_df.to_json(args.output_aseg, orient="records", index=False, indent=4)
 
 
 if __name__ == "__main__":
