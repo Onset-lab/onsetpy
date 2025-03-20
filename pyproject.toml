@@ -31,11 +31,12 @@ dependencies = [
 "pytest-metadata==3.1.*",
 "pytest-console-scripts==1.4.*",
 "pytest-html==4.1.*",
+"weasyprint==63.1"
 ]
 
 [project.scripts]
 onset_convert_fs_stats = "onsetpy.scripts.onset_convert_fs_stats:main"
-onset_json_to_npy = "onsetpy.scripts.onset_json_to_npy:main"
+onset_create_surgeryflow_report = "onsetpy.scripts.onset_create_surgeryflow_report:main"
 onset_mean_std_connectivity_matrix = "onsetpy.scripts.onset_mean_std_connectivity_matrix:main"
 onset_zscore_connectivity_matrix = "onsetpy.scripts.onset_zscore_connectivity_matrix:main"
 
