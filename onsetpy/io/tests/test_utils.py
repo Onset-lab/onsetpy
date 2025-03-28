@@ -38,6 +38,31 @@ def test_verbose_level_debug(parser):
     args = parser.parse_args(["-v", "DEBUG"])
     assert args.verbose == "DEBUG"
 
+    @patch("os.path.isdir", return_value=True)
+    def test_output_directory_exists_without_overwrite(self, mock_isdir):
+        with self.assertRaises(SystemExit):
+            assert_outputs_exist(
+                self.parser, self.args, "output_dir/", output_is_dir=True
+            )
+
+    @patch("os.path.isdir", return_value=True)
+    def test_output_directory_exists_with_overwrite(self, mock_isdir):
+        self.args.overwrite = True
+        assert_outputs_exist(self.parser, self.args, "output_dir/", output_is_dir=True)
+        # No exception should be raised
+
+    @patch("os.path.isfile", return_value=True)
+    def test_required_file_exists_with_overwrite(self, mock_isfile):
+        self.args.overwrite = True
+        assert_outputs_exist(self.parser, self.args, "file1.txt")
+        # No exception should be raised
+
+    @patch("os.path.isfile", side_effect=[True, False])
+    def test_mixed_files_exist_with_overwrite(self, mock_isfile):
+        self.args.overwrite = True
+        assert_outputs_exist(self.parser, self.args, ["file1.txt"], ["file2.txt"])
+        # No exception should be raised
+
 
 def test_verbose_level_warning(parser):
     add_verbose_arg(parser)
