@@ -35,6 +35,8 @@ dependencies = [
 ]
 
 [project.scripts]
+onset_evaluate_cortical_measures = "onsetpy.scripts.onset_evaluate_cortical_measures:main"
+onset_add_metadata_to_csv = "onsetpy.scripts.onset_add_metadata:main"
 onset_convert_fs_stats = "onsetpy.scripts.onset_convert_fs_stats:main"
 onset_create_surgeryflow_report = "onsetpy.scripts.onset_create_surgeryflow_report:main"
 onset_mean_std_connectivity_matrix = "onsetpy.scripts.onset_mean_std_connectivity_matrix:main"
