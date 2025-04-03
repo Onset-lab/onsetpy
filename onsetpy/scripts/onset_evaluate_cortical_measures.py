@@ -7,6 +7,7 @@ Compare a patient to our database of cortical measures.
 import argparse
 import pandas as pd
 import seaborn as sns
+import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 from onsetpy.io.utils import (
     add_overwrite_arg,
@@ -17,106 +18,126 @@ from onsetpy.io.utils import (
 
 
 def _build_arg_parser():
-    """Build argparser.
-
-    Returns:
-        parser (ArgumentParser): Parser built.
-    """
+    """Build argparser."""
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter
     )
-    parser.add_argument(
-        "aparc_csv",
-        help="Path to the patient aparc CSV file",
-    )
-
-    parser.add_argument(
-        "aseg_csv",
-        help="Path to the patient aseg CSV file",
-    )
-
-    # parser.add_argument("patient_age", help="Patient age.", type=float)
-    # parser.add_argument("patient_sex", help="Patient sex.", choices=[1, 2], type=int)
-    # parser.add_argument(
-    #     "database_csv",
-    #     help="Path to the database CSV file",
-    # )
+    parser.add_argument("aparc_csv", help="Path to the patient aparc CSV file")
+    parser.add_argument("aseg_csv", help="Path to the patient aseg CSV file")
     parser.add_argument("output", help="Path to the output PNG file")
-
     parser.add_argument(
-        "--age_window",
-        type=int,
-        help="Age window for filtering. For example, if the patient is 30 years old, with a window of 5, the controls between 28 and 32 will be used.",
-        default=5,
+        "--asymmetry_threshold", type=float, help="Asymmetry threshold", default=10
     )
-
-    parser.add_argument(
-        "--z_threshold", type=float, help="Z-score threshold", default=2
-    )
-
     add_overwrite_arg(parser)
     add_version_arg(parser)
     return parser
+
+
+def calculate_asymmetry_index(data, roi_column, value_column, side_column, z_threshold):
+    """Calculate asymmetry index for given data."""
+    roi_columns = data[roi_column].unique()
+    asymmetry_index = {}
+
+    for roi in roi_columns:
+        left_value = data.loc[
+            (data[roi_column] == roi) & (data[side_column] == "left"), value_column
+        ].iloc[0]
+        right_value = data.loc[
+            (data[roi_column] == roi) & (data[side_column] == "right"), value_column
+        ].iloc[0]
+        asymmetry_index[roi] = (right_value - left_value) / left_value * 100
+        print(roi, left_value, right_value, asymmetry_index[roi])
+
+    df = pd.DataFrame([asymmetry_index]).transpose()
+    df.columns = ["asymmetry_index"]
+    return df[df["asymmetry_index"].abs() >= z_threshold]
+
+
+def calculate_aseg_asymmetry_index(data, z_threshold):
+    """Calculate asymmetry index for aseg data."""
+    rois = [
+        roi.replace("Left-", "").replace("Right-", "")
+        for roi in data["roi"].unique()
+        if "Left" in roi or "Right" in roi
+    ]
+    rois = list(set(rois))
+    asymmetry_index = {}
+
+    for roi in rois:
+        left_value = data.loc[data["roi"] == f"Left-{roi}", "volume"].iloc[0]
+        right_value = data.loc[data["roi"] == f"Right-{roi}", "volume"].iloc[0]
+        asymmetry_index[roi] = (right_value - left_value) / left_value * 100
+
+    df = pd.DataFrame([asymmetry_index]).transpose()
+    df.columns = ["asymmetry_index"]
+    return df[df["asymmetry_index"].abs() >= z_threshold]
+
+
+def plot_asymmetry_index(df_combined, aparc_list, roi_mapping, output_path):
+    """Plot the asymmetry index."""
+    plt.figure(figsize=(10, max(6, len(df_combined) * 0.3)))
+    sns.set_style("whitegrid")
+
+    colors = [
+        "#FF6B6B" if idx in aparc_list else "#4ECDC4" for idx in df_combined.index
+    ]
+    df_combined.index = df_combined.index.map(lambda x: roi_mapping.get(x, x))
+    ax = sns.barplot(
+        data=df_combined,
+        y=df_combined.index,
+        hue=df_combined.index,
+        x="asymmetry_index",
+        palette=colors,
+    )
+    print(df_combined)
+    plt.title(
+        "Relative Asymmetry Index by ROI\n(Comparison of Right vs Left Hemisphere)",
+        pad=20,
+        fontsize=14,
+        fontweight="bold",
+    )
+    plt.xlabel("Relative Asymmetry Index (%)", fontsize=10)
+    plt.ylabel("ROI", fontsize=10)
+
+    legend_elements = [
+        Patch(facecolor="#FF6B6B", label="Cortical (thickness)"),
+        Patch(facecolor="#4ECDC4", label="Subcortical (volume)"),
+    ]
+    ax.legend(handles=legend_elements)
+
+    sns.despine()
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=300)
 
 
 def main():
     parser = _build_arg_parser()
     args = parser.parse_args()
 
-    # assert_inputs_exist(parser, [args.aparc_csv, args.aseg_csv, args.database_csv])
-    # assert_outputs_exist(parser, args, [args.output])
+    assert_inputs_exist(parser, [args.aparc_csv, args.aseg_csv])
+    assert_outputs_exist(parser, args, [args.output])
 
-    # if not args.output.lower().endswith(".csv"):
-    #     parser.error("Output file must be a CSV file.")
+    if not args.output.lower().endswith(".png"):
+        parser.error("Output file must be a PNG file.")
 
-    # df_db = pd.read_csv(args.database_csv)
     aparc = pd.read_csv(args.aparc_csv)
+    aseg = pd.read_csv(args.aseg_csv)
+    aseg = aseg[aseg["volume"] != 0]
 
-    # Filter for females (sex=2) and age between 20-25
-    # min_age = args.patient_age - args.age_window / 2
-    # max_age = args.patient_age + args.age_window / 2
-    # filtered_df = df_db[
-    #     (df_db["sex"] == args.patient_sex) & (df_db["age"].between(min_age, max_age))
-    # ]
+    df_aparc = calculate_asymmetry_index(
+        aparc,
+        roi_column="roi",
+        value_column="thickness",
+        side_column="side",
+        z_threshold=args.asymmetry_threshold,
+    )
+    df_aseg = calculate_aseg_asymmetry_index(aseg, z_threshold=args.asymmetry_threshold)
 
-    # Get all ROI columns (excluding non-ROI columns like 'age' and 'sex')
-    roi_columns = aparc["roi"].unique()
+    df_combined = pd.concat([df_aparc, df_aseg]).sort_values(
+        by="asymmetry_index", ascending=False
+    )
 
-    # Calculate z-scores for each ROI
-    # z_scores = {}
-    # for side in aparc["side"].unique():
-    #     for roi in roi_columns:
-    #         roi_mean = filtered_df.loc[
-    #             (filtered_df["roi"] == roi) & (filtered_df["side"] == side), "thickness"
-    #         ].mean()
-    #         roi_std = filtered_df.loc[
-    #             (filtered_df["roi"] == roi) & (filtered_df["side"] == side), "thickness"
-    #         ].std()
-    #         patient_value = aparc.loc[
-    #             (aparc["roi"] == roi) & (aparc["side"] == side), "thickness"
-    #         ].iloc[0]
-    #         z_scores[roi] = (patient_value - roi_mean) / roi_std
-    #         if abs(z_scores[roi]) > args.z_threshold:
-    #             print(
-    #                 f"Warning: {side} {roi} z-score is greater than {args.z_threshold} ({z_scores[roi]})"
-
-    aparc_asymetry_index = {}
-    for roi in roi_columns:
-        patient_value_left = aparc.loc[
-            (aparc["roi"] == roi) & (aparc["side"] == "left"), "thickness"
-        ].iloc[0]
-        patient_value_right = aparc.loc[
-            (aparc["roi"] == roi) & (aparc["side"] == "right"), "thickness"
-        ].iloc[0]
-        aparc_asymetry_index[roi] = (
-            (patient_value_right - patient_value_left) / patient_value_left * 100
-        )
-    df_ai = pd.DataFrame([aparc_asymetry_index]).transpose()
-    df_ai.columns = ["asymmetry_index"]
-    df_ai = df_ai[df_ai["asymmetry_index"].abs() >= args.z_threshold]
-
-    # Dictionary mapping FreeSurfer ROIs to full anatomical names
-    roi_mapping = {
+    roi_mapping = {  # Dictionary mapping FreeSurfer ROIs to full anatomical names
         "Lateral-Ventricle": "Lateral Ventricle",
         "Inf-Lat-Vent": "Inferior Lateral Ventricle",
         "Cerebellum-White-Matter": "Cerebellar White Matter",
@@ -220,69 +241,7 @@ def main():
         "S_temporal_transverse": "Transverse Temporal Sulcus",
     }
 
-    # Convert to DataFrame for easier handling
-    # z_score_df = pd.DataFrame([z_scores])
-    # print(z_scores)
-    # print(df_db)
-    aseg = pd.read_csv(args.aseg_csv)
-    aseg = aseg[aseg["volume"] != 0]
-    rois = [
-        roi.replace("Left-", "").replace("Right-", "")
-        for roi in aseg["roi"].unique()
-        if "Left" in roi or "Right" in roi
-    ]
-    rois = list(set(rois))
-
-    aseg_asymetry_index = {}
-    for roi in rois:
-        patient_value_left = aseg.loc[(aseg["roi"] == "Left-" + roi), "volume"].iloc[0]
-        patient_value_right = aseg.loc[(aseg["roi"] == "Right-" + roi), "volume"].iloc[
-            0
-        ]
-
-        aseg_asymetry_index[roi] = (
-            (patient_value_right - patient_value_left) / patient_value_left * 100
-        )
-
-    df_ai_aseg = pd.DataFrame([aseg_asymetry_index]).transpose()
-    df_ai_aseg.columns = ["asymmetry_index"]
-    df_ai_aseg = df_ai_aseg[df_ai_aseg["asymmetry_index"].abs() >= args.z_threshold]
-    # Concatenate both dataframes and sort by asymmetry index
-    df_combined = pd.concat([df_ai, df_ai_aseg])
-    df_combined = df_combined.sort_values(by="asymmetry_index", ascending=False)
-
-    # Create combined visualization
-
-    import matplotlib.pyplot as plt
-
-    plt.figure(figsize=(10, max(6, len(df_combined) * 0.3)))
-    sns.set_style("whitegrid")
-
-    # Create color list based on index source (aparc or aseg)
-    colors = [
-        "#FF6B6B" if idx in df_ai.index else "#4ECDC4" for idx in df_combined.index
-    ]
-    df_combined.index = df_combined.index.map(lambda x: roi_mapping.get(x, x))
-    ax = sns.barplot(
-        data=df_combined, y=df_combined.index, x="asymmetry_index", palette=colors
-    )
-    plt.title(
-        "ROI Relative Asymmetry Index (right compared to left)", pad=20, fontsize=12
-    )
-    plt.xlabel("Relative Asymmetry Index (%)", fontsize=10)
-    plt.ylabel("ROI", fontsize=10)
-
-    # Add legend
-    legend_elements = [
-        Patch(facecolor="#FF6B6B", label="Cortical (thickness)"),
-        Patch(facecolor="#4ECDC4", label="Subcortical (volume)"),
-    ]
-    ax.legend(handles=legend_elements)
-
-    sns.despine()
-    plt.tight_layout()
-    # plt.show()
-    plt.savefig(args.output, dpi=300)
+    plot_asymmetry_index(df_combined, df_aparc.index, roi_mapping, args.output)
 
 
 if __name__ == "__main__":
