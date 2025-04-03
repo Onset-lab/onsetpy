@@ -24,7 +24,10 @@ def _build_arg_parser():
     )
     parser.add_argument("aparc_csv", help="Path to the patient aparc CSV file")
     parser.add_argument("aseg_csv", help="Path to the patient aseg CSV file")
-    parser.add_argument("output", help="Path to the output PNG file")
+    parser.add_argument(
+        "output", help="Path to the output CSV or JSON file with asymmetry index"
+    )
+    parser.add_argument("output_png", help="Path to the output PNG file")
     parser.add_argument(
         "--asymmetry_threshold", type=float, help="Asymmetry threshold", default=10
     )
@@ -46,7 +49,6 @@ def calculate_asymmetry_index(data, roi_column, value_column, side_column, z_thr
             (data[roi_column] == roi) & (data[side_column] == "right"), value_column
         ].iloc[0]
         asymmetry_index[roi] = (right_value - left_value) / left_value * 100
-        print(roi, left_value, right_value, asymmetry_index[roi])
 
     df = pd.DataFrame([asymmetry_index]).transpose()
     df.columns = ["asymmetry_index"]
@@ -89,7 +91,6 @@ def plot_asymmetry_index(df_combined, aparc_list, roi_mapping, output_path):
         x="asymmetry_index",
         palette=colors,
     )
-    print(df_combined)
     plt.title(
         "Relative Asymmetry Index by ROI\n(Comparison of Right vs Left Hemisphere)",
         pad=20,
@@ -115,10 +116,15 @@ def main():
     args = parser.parse_args()
 
     assert_inputs_exist(parser, [args.aparc_csv, args.aseg_csv])
-    assert_outputs_exist(parser, args, [args.output])
+    assert_outputs_exist(parser, args, [args.output_png, args.output])
 
-    if not args.output.lower().endswith(".png"):
+    if not args.output_png.lower().endswith(".png"):
         parser.error("Output file must be a PNG file.")
+
+    if not args.output.lower().endswith(".csv") and not args.output.lower().endswith(
+        ".json"
+    ):
+        parser.error("Output file must be a CSV or JSON file.")
 
     aparc = pd.read_csv(args.aparc_csv)
     aseg = pd.read_csv(args.aseg_csv)
@@ -241,7 +247,13 @@ def main():
         "S_temporal_transverse": "Transverse Temporal Sulcus",
     }
 
-    plot_asymmetry_index(df_combined, df_aparc.index, roi_mapping, args.output)
+    plot_asymmetry_index(df_combined, df_aparc.index, roi_mapping, args.output_png)
+    df_combined.index.names = ["roi"]
+    df_combined.reset_index(inplace=True)
+    if args.output.lower().endswith(".csv"):
+        df_combined.to_csv(args.output)
+    else:
+        df_combined.to_json(args.output, orient="records", indent=4)
 
 
 if __name__ == "__main__":
