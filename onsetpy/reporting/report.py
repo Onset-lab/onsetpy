@@ -64,10 +64,10 @@ class SurgeryflowReport(Report):
 
     def render(self, missing_bundles, screenshot_path):
         """
-        Renders the stroke report using the provided volumetry data and screenshot path.
+        Renders the SurgeryFlow report using the provided missing bundles list and screenshot path.
 
         Args:
-            volumetry_data (dict): The volumetry data to be included in the report.
+            missing_bundles (dict): List of missing bundles to be included in the report.
             screenshot_path (str): The file path to the screenshot image.
 
         Returns:
@@ -80,5 +80,41 @@ class SurgeryflowReport(Report):
             "date": self.date,
             "screenshot": screenshot_path,
             "missing_bundles": missing_bundles,
+        }
+        self.html_content = template.render(data)
+
+
+class EpinsightReport(Report):
+    def __init__(self, patient_name, patient_id, date):
+        super().__init__(patient_name, patient_id, date)
+
+    def render(
+        self,
+        asymmetry_index,
+        asymmetry_figure,
+        map18_figures,
+        brain_screenshot,
+    ):
+        """
+        Renders the Epinsight report using the provided asymmetry index data and screenshot path.
+
+        Args:
+            asymmetry_index (dict): The asymmetry index data to be included in the report.
+            asymmetry_figure (str): The file path to the asymmetryfigure.
+            map18_figures (list): List of file paths to the map18 figures.
+            brain_screenshot (str): The file path to the brain screenshot image.
+
+        Returns:
+            None
+        """
+        template = self.env.get_template("epinsight_report.html")
+        data = {
+            "patient_name": self.patient_name,
+            "patient_id": self.patient_id,
+            "date": self.date,
+            "asymmetry_figure": asymmetry_figure,
+            "asymmetry_index": asymmetry_index,
+            "map18_figures": map18_figures,
+            "brain_screenshot": brain_screenshot,
         }
         self.html_content = template.render(data)

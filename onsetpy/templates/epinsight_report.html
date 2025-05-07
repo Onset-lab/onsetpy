@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en"></html>
+<head>
+    <meta charset="UTF-8">
+    <title>Epinsight Report</title>
+    <style>
+        @page {
+            size: letter;
+            margin-left: 0;
+            margin-right: 0;
+            background-color: #f4f4f9 !important;
+            @top-center {
+                content: "CHUM Research Center";
+            }
+            @bottom-center {
+                content: "{{patient_name}} {{patient_id}}";
+            }
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: small;
+            margin: 0in;
+            padding: 0in;
+            color: rgb(51, 51, 51);
+        }
+        .page {
+            padding-left: 1in;
+            padding-right: 1in;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            border-bottom: 2px solid #ccc;
+        }
+        .header img {
+            max-width: 150px;
+            height: auto;
+            margin-right: 20px;
+        }
+        .header h1 {
+            flex: 1;
+            text-align: center;
+            margin: 0;
+            color: rgb(0, 64, 113);
+        }
+        .patient-info {
+            margin: 20px 0;
+            background-color: #ffffff;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .screenshot {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .screenshot img {
+            display:block;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #ffffff;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th {
+            background-color: rgb(114, 191, 68);
+            color: white;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+            width: 30%;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="header">
+            <img src="https://www.chumontreal.qc.ca/sites/default/files/logos/logo_crchum_versionlongue_sans_fond.png" alt="Logo CRCHUM">
+            <h1>Epinsight Report</h1>
+        </div>
+
+        <div class="patient-info">
+            <p><strong>Patient Name:</strong> {{patient_name}} <span style="float: right;"><strong>Date:</strong> {{date}}</span></p>
+            <p><strong>Patient ID:</strong> {{patient_id}}</p>
+        </div>
+
+        <div class="brain_screenshot">        
+            <div class="screenshot">
+                <img src="file://{{brain_screenshot}}" alt="Brain screenshot" style="max-width:100%; height:auto">
+            </div>
+        </div>
+
+        <div class="methodology-list">
+            <h2>Methodologies</h2>
+            <ul>
+                <li><a href="#huppertz-bernarsconi-method">Huppertz/Bernarsconi Method</a></li>
+                <li><a href="#relative-asymmetry-index">Relative Asymmetry Index</a></li>
+                <li><a href="#tractography">Tractography</a></li>
+                <li><a href="#7t">7T Acquisitions</a></li>
+            </ul>
+        </div>
+
+        <div id="huppertz-bernarsconi-method" class="huppertz-bernarsconi-method" style="page-break-before: always;">
+            <h2>Huppertz/Bernarsconi Method</h2>
+            <p>Possible anomalies detected: {{map18_figures|length}}. Please refer to the following screenshots for more details.</p>
+            <div class="screenshot">
+                {% for figure in map18_figures %}
+                    <img src="file://{{figure}}" alt="Brain screenshot" style="max-width:100%; height:auto">
+                {% endfor %}
+            </div>
+        </div>
+
+        <div id="relative-asymmetry-index" class="relative-asymmetry-index" style="page-break-before: always;">
+            <h2>Relative asymmetry index</h2>
+
+            <p>A negative asymmetry index indicates that the right region has a lower cortical thickness or volume compared to the left region.
+                Please refer to the following pages for more details.</p>
+
+            <div class="screenshot">
+                <img src="file://{{asymmetry_figure}}" alt="Brain screenshot" style="max-width:100%; height:auto">
+            </div>
+
+            <div class="analysis-table">
+                <table>
+                <thead>
+                    <tr>
+                    <th>Region</th>
+                    <th>Relative asymmetry index (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for region in asymmetry_index %}
+                    <tr>
+                    <td>{{ region["roi"] }}</td>
+                    <td>{{ "%.01f" | format(region["asymmetry_index"]) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="disclaimer">
+            <h2>Medical Disclaimer</h2>
+            <p>All content found in this document, including: text, images, audio, or other formats were created for informational
+                purposes only. The content is not intended to be a substitute for professional medical advice, diagnosis, or treatment.
+                Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a
+                medical condition. Never disregard professional medical advice or delay in seeking it because of something you have read
+                in this document.
+                <br>This document does not recommend or endorse any specific tests, physicians, products, procedures, opinions, or other
+                information that may be mentioned herein. Reliance on any information provided in this document is solely at your own risk.</p>
+        </div>
+    </div>
+</body>
+</html>
