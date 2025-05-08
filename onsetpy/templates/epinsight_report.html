@@ -104,19 +104,21 @@
             <ul>
                 <li><a href="#huppertz-bernarsconi-method">Huppertz/Bernarsconi Method</a></li>
                 <li><a href="#relative-asymmetry-index">Relative Asymmetry Index</a></li>
-                <li><a href="#tractography">Tractography</a></li>
-                <li><a href="#7t">7T Acquisitions</a></li>
             </ul>
         </div>
 
         <div id="huppertz-bernarsconi-method" class="huppertz-bernarsconi-method" style="page-break-before: always;">
             <h2>Huppertz/Bernarsconi Method</h2>
-            <p>Possible anomalies detected: {{map18_figures|length}}. Please refer to the following screenshots for more details.</p>
-            <div class="screenshot">
-                {% for figure in map18_figures %}
-                    <img src="file://{{figure}}" alt="Brain screenshot" style="max-width:100%; height:auto">
-                {% endfor %}
-            </div>
+            {% if map18_figures %}
+                <p>Possible anomalies detected: {{map18_figures|length}}. Please refer to the following screenshots for more details.</p>
+                <div class="screenshot">
+                    {% for figure in map18_figures %}
+                        <img src="file://{{figure}}" alt="Brain screenshot" style="max-width:100%; height:auto">
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>No anomalies detected.</p>
+            {% endif %}
         </div>
 
         <div id="relative-asymmetry-index" class="relative-asymmetry-index" style="page-break-before: always;">
