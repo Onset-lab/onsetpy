@@ -81,11 +81,7 @@ def main():
     report.render(
         asymmetry_index,
         os.path.abspath(args.asymmetry_figure),
-        [
-            os.path.abspath(figure)
-            for figure in args.map18_figures
-            if args.map18_figures is not None
-        ],
+        [os.path.abspath(figure) for figure in (args.map18_figures or [])],
         os.path.abspath(args.brain_screenshot),
     )
     report.to_pdf(args.output_report)
