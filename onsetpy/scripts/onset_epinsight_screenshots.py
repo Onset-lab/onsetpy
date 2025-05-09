@@ -187,6 +187,8 @@ def main():
             vmaxs.append(values[1])
         vmin = max(vmins)
         vmax = min(vmaxs)
+        print(f"vmin: {vmin}, vmax: {vmax}")
+        print(values)
 
         plot_slices(
             axial,
