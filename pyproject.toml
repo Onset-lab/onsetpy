@@ -23,7 +23,7 @@ classifiers = [
     "Topic :: Scientific/Engineering"
 ]
 dependencies = [
-"matplotlib==3.10.*",
+"matplotlib==3.9.*",
 "nibabel==5.2.*",
 "numpy==2.0.*",
 "pandas==2.2.*",
