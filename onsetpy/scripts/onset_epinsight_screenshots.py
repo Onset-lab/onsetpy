@@ -180,9 +180,11 @@ def main():
         image = nib.load(image_path).get_fdata()
         axial, coronal, sagittal = get_slices(image, tuple(args.coord))
 
-        vmins = vmaxs = []
+        vmins = []
+        vmaxs = []
         for axis in [axial, coronal, sagittal]:
             values = np.percentile(axis[axis != 0], [20, 100])
+            print(values, values[0], values[1])
             vmins.append(values[0])
             vmaxs.append(values[1])
         vmin = max(vmins)
