@@ -189,7 +189,7 @@ def download_study_zip_by_id(
         return None
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="Export patients form Orthanc PACS")
     parser.add_argument("csv_path", help="Path to the CSV file")
     parser.add_argument("output_folder", help="Folder for ZIP files")
@@ -234,10 +234,14 @@ if __name__ == "__main__":
         session_folder = os.path.join(patient_folder, str(row["session"]))
         os.makedirs(session_folder, exist_ok=True)
         output_file_path = os.path.join(session_folder, f"{an_to_find}.zip")
-        downloaded_path_retrieved = download_study_zip_by_id(
+        download_study_zip_by_id(
             orthanc_url=ORTHANC_URL,
             orthanc_study_id=orthanc_retrieved_id,
             output_filename=output_file_path,
             username=ORTHANC_USERNAME,
             password=ORTHANC_PASSWORD,
         )
+
+
+if __name__ == "__main__":
+    main()
