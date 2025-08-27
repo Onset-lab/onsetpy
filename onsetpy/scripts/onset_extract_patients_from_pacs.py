@@ -171,6 +171,9 @@ def download_study_zip_by_id(
         print(
             f"Study '{orthanc_study_id}' successfully downloaded to '{output_filename}'"
         )
+        delete_url = f"{orthanc_url}/studies/{orthanc_study_id}"
+        response = requests.delete(delete_url, auth=auth)
+        response.raise_for_status()
         return os.path.abspath(output_filename)
 
     except requests.exceptions.ConnectionError as e:
