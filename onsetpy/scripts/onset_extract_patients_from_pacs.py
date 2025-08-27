@@ -119,6 +119,7 @@ def find_and_retrieve_from_remote_aet(
             move_url, data=retrieve_aet_title, auth=auth, headers=headers
         )
         response.raise_for_status()  # Raise an exception for HTTP error status codes
+        print(response.text)
 
         time.sleep(2)
         studies_found = get_study_by_criteria(
@@ -211,6 +212,9 @@ def main():
 
     for idx, row in df.iterrows():
         an_to_find = str(row["AccessionNumber"]).strip()
+
+        if len(an_to_find) != 14:
+            an_to_find += "01"
 
         studies_found = get_study_by_criteria(
             ORTHANC_URL,
