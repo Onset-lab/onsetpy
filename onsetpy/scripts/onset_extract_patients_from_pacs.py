@@ -122,14 +122,14 @@ def find_and_retrieve_from_remote_aet(
 
         time.sleep(2)
         studies_found = get_study_by_criteria(
-            orthanc_url=ORTHANC_URL,
-            accession_number=an_to_find,
-            username=ORTHANC_USERNAME,
-            password=ORTHANC_PASSWORD,
+            orthanc_url=orthanc_url,
+            accession_number=accession_number,
+            username=username,
+            password=password,
         )
         return studies_found[0]["ID"]
     except:
-        print(f"Error transferring for {an_to_find}.")
+        print(f"Error transferring for {accession_number}.")
         return []
 
 
