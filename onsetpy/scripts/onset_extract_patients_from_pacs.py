@@ -121,7 +121,7 @@ def find_and_retrieve_from_remote_aet(
         response.raise_for_status()  # Raise an exception for HTTP error status codes
         print(response.text)
 
-        time.sleep(2)
+        time.sleep(5)
         studies_found = get_study_by_criteria(
             orthanc_url=orthanc_url,
             accession_number=accession_number,
@@ -215,39 +215,41 @@ def main():
 
     for idx, row in df.iterrows():
         an_to_find = str(row["AccessionNumber"]).strip()
+        patient_folder = os.path.join(args.output_folder, str(row["Patient Name"]))
+        session_folder = os.path.join(patient_folder, str(row["session"]))
+        output_file_path = os.path.join(session_folder, f"{an_to_find}.zip")
+        if not os.path.exists(output_file_path):
+            if len(an_to_find) != 14:
+                an_to_find += "01"
 
-        if len(an_to_find) != 14:
-            an_to_find += "01"
+            studies_found = get_study_by_criteria(
+                ORTHANC_URL,
+                an_to_find,
+                username=ORTHANC_USERNAME,
+                password=ORTHANC_PASSWORD,
+            )
+            if len(studies_found) == 0:
+                orthanc_retrieved_id = find_and_retrieve_from_remote_aet(
+                    orthanc_url=ORTHANC_URL,
+                    remote_aet_name=REMOTE_AET_NAME,
+                    accession_number=an_to_find,
+                    retrieve_aet_title=MY_ORTHANC_AET,
+                    username=ORTHANC_USERNAME,
+                    password=ORTHANC_PASSWORD,
+                )
+            else:
+                orthanc_retrieved_id = studies_found[0]["ID"]
 
-        studies_found = get_study_by_criteria(
-            ORTHANC_URL,
-            an_to_find,
-            username=ORTHANC_USERNAME,
-            password=ORTHANC_PASSWORD,
-        )
-        if len(studies_found) == 0:
-            orthanc_retrieved_id = find_and_retrieve_from_remote_aet(
+            os.makedirs(session_folder, exist_ok=True)
+            download_study_zip_by_id(
                 orthanc_url=ORTHANC_URL,
-                remote_aet_name=REMOTE_AET_NAME,
-                accession_number=an_to_find,
-                retrieve_aet_title=MY_ORTHANC_AET,
+                orthanc_study_id=orthanc_retrieved_id,
+                output_filename=output_file_path,
                 username=ORTHANC_USERNAME,
                 password=ORTHANC_PASSWORD,
             )
         else:
-            orthanc_retrieved_id = studies_found[0]["ID"]
-
-        patient_folder = os.path.join(args.output_folder, str(row["Patient Name"]))
-        session_folder = os.path.join(patient_folder, str(row["session"]))
-        os.makedirs(session_folder, exist_ok=True)
-        output_file_path = os.path.join(session_folder, f"{an_to_find}.zip")
-        download_study_zip_by_id(
-            orthanc_url=ORTHANC_URL,
-            orthanc_study_id=orthanc_retrieved_id,
-            output_filename=output_file_path,
-            username=ORTHANC_USERNAME,
-            password=ORTHANC_PASSWORD,
-        )
+            print(f"Study '{an_to_find}' already exists at '{output_file_path}'")
 
 
 if __name__ == "__main__":
