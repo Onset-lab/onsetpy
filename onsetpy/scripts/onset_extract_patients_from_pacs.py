@@ -215,12 +215,12 @@ def main():
 
     for idx, row in df.iterrows():
         an_to_find = str(row["AccessionNumber"]).strip()
+        if len(an_to_find) != 14:
+            an_to_find += "01"
         patient_folder = os.path.join(args.output_folder, str(row["Patient Name"]))
         session_folder = os.path.join(patient_folder, str(row["session"]))
         output_file_path = os.path.join(session_folder, f"{an_to_find}.zip")
         if not os.path.exists(output_file_path):
-            if len(an_to_find) != 14:
-                an_to_find += "01"
 
             studies_found = get_study_by_criteria(
                 ORTHANC_URL,
