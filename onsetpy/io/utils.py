@@ -89,6 +89,7 @@ def assert_outputs_exist(
     required: Union[str, List[str]],
     optional: Union[str, List[str]] = None,
     check_dir_exists: bool = True,
+    output_is_dir: bool = False,
 ) -> None:
     """**Imported from Scilpy**
     Assert that all outputs don't exist or that if they exist, -f was used.
@@ -100,6 +101,7 @@ def assert_outputs_exist(
         required (Union[str, List[str]]): Required paths to be checked.
         optional (Union[str, List[str]], optional): Optional paths to be checked. Defaults to None.
         check_dir_exists (bool, optional): Test if output directory exists. Defaults to True.
+        output_is_dir (bool, optional): Test if output is a directory. Defaults to False.
     """
 
     def check(path: str):
@@ -108,7 +110,13 @@ def assert_outputs_exist(
         Args:
             path (str): file or directory name
         """
-        if os.path.isfile(path) and not args.overwrite:
+        if output_is_dir:
+            if os.path.isdir(path) and not args.overwrite:
+                parser.error(
+                    "Output directory {} exists. Use -f to force "
+                    "overwriting".format(path)
+                )
+        elif os.path.isfile(path) and not args.overwrite:
             parser.error(
                 "Output file {} exists. Use -f to force " "overwriting".format(path)
             )
