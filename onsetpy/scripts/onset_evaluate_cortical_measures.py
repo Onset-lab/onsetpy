@@ -38,7 +38,11 @@ def _build_arg_parser():
 
 def calculate_asymmetry_index(data, roi_column, value_column, side_column, z_threshold):
     """Calculate asymmetry index for given data."""
-    roi_columns = data[roi_column].unique()
+    # keep only ROIs that have both left and right sides present
+    groups = data.groupby(roi_column)[side_column].apply(lambda s: set(s.str.lower()))
+    roi_columns = [
+        roi for roi, sides in groups.items() if {"left", "right"}.issubset(sides)
+    ]
     asymmetry_index = {}
 
     for roi in roi_columns:
