@@ -47,6 +47,7 @@ onset_json_to_npy = "onsetpy.scripts.onset_json_to_npy:main"
 onset_mean_std_connectivity_matrix = "onsetpy.scripts.onset_mean_std_connectivity_matrix:main"
 onset_zscore_connectivity_matrix = "onsetpy.scripts.onset_zscore_connectivity_matrix:main"
 onset_extract_patients_from_pacs = "onsetpy.scripts.onset_extract_patients_from_pacs:main"
+onset_get_functions_by_id = "onsetpy.scripts.onset_get_functions_by_id:main"
 
 [project.urls]
     Homepage = "https://github.com/Onset-lab"
