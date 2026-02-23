@@ -73,23 +73,8 @@ def pre_process_df(df):
     Sépare les lignes contenant plusieurs ROI (séparés par des virgules) en plusieurs lignes (1 ROI par ligne)
     """
     
-    #1. Sélection de la colonne ROI
-    def select_roi_source(row):
-        method = str(row.get('roi_mask_conversion_method', ''))
-        
-        #Si méthode de conversion exact -> on prend la colonne yale_label
-        if method == 'exact':
-            val = row.get('yale_label', '')
-        else:
-            val = row.get('roi_mask', '')
-        
-        return str(val)
-        
-    #On met dans une nouvelle colonne les ROI Yale (traitement de la df ligne par ligne)
-    df['unified_roi'] = df.apply(select_roi_source, axis=1)
     
-    
-    #2. Parsing selon ROI (gestion listes et deduplication)
+    #1. Parsing selon ROI (gestion listes et deduplication)
     def _parse_roi_list(val):
         #On découpe par , et on convertit en str
         id = str(val).split(',')
@@ -207,5 +192,4 @@ def main():
             )
         print("-" * 86)
 
-if __name__ == "__main__":
-    main()
+main()
