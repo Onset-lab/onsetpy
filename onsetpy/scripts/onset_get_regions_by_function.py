@@ -173,8 +173,6 @@ def pre_process_df(df):
     df['weight'] = df['roi_list'].apply(lambda x: 1/len(_parse_roi_list(x)))    
     df["weighted_occurrence_clinical_effect"] = (df["occurrence_clinical_effect"] * df["weight"])
 
-    #Conversion du nb stim en float
-    df['nb_stimulations'] = pd.to_numeric(df['nb_stimulations'], errors='coerce')
         
     #On "explose' : 1 ROI par ligne 
     df = df.explode('roi_list').dropna(subset=['roi_list']).reset_index(drop=True)
@@ -321,7 +319,7 @@ def main():
         label = str(row.get('roi_name', "<inconnu>"))
         weighted_ratio = float(row.get("weighted_positive_ratio", 0.0) or 0.0)
         ratio = float(row.get("total_positive_ratio", 0.0) or 0.0)
-        nb = float(row.get("total_nb_stimulations", 0.0) or 0.0)
+        nb = int(row.get("total_nb_stimulations", 0.0) or 0.0)
         tot_weighted = float(row.get("total_weighted_occurrence_clinical_effect", 0.0) or 0.0)
         tot = float(row.get("total_occurrence_clinical_effect", 0.0) or 0.0)
     
@@ -331,7 +329,7 @@ def main():
         print(
             f"{roi_id_val:<10} " #Affiche l'ID et complete avec des espaces pour que ca prenne 10 caracteres (aligné à gauche)
             f"{label_display:<30} "
-            f"{weighted_ratio * 100:15.1f} {ratio * 100:9.1f} {nb:8.1f} " 
+            f"{weighted_ratio * 100:15.1f} {ratio * 100:9.1f} {nb:8d} " 
             #Affiche un chiffre avec 1 decimal sur une largeur de 11 caracteres
             f"{tot_weighted:14.2f} {tot:7.2f}"
         )
