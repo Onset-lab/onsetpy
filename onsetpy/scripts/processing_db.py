@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Spyder Editor
-
-This is a temporary script file.
+Processing of Database for SPACES project
 """
 import pandas as pd
 import sqlite3
@@ -249,8 +247,7 @@ def cleaning_row(row_data, dict_effects):
             
     #Regroupement par , de la ROI
     row_data['roi_mask'] = ",".join([x for x in filtered_masks])
-   
-    
+
     #--- TRAITEMENT DES EFFETS ---
     #Lecture des contenus des colonnes
     raw_desc = str(row_data['effect_descriptor']) if row_data['effect_descriptor'] else ""
@@ -376,9 +373,6 @@ for idx, row in df.iterrows():
     else:
         #Si c'est pas vide on garde 
         final_rows.append(processed_row)
-    
-    #On ajoute la ligne au tableau final
-    final_rows.append(processed_row)
                            
 #Création du nouveau tableau
 processed_df = pd.DataFrame(final_rows)
@@ -391,6 +385,28 @@ print("Lancement de la conversion des coordonnées exacts en labels Yale...")
 
 #Appel de la fonction qui convertie la position exacte en label Yale
 df_final = conversion_exact_to_Yale.mapping_yale(processed_df)
+
+print("Création de la colonne 'unified_roi_mask' qui regroupe les ROI Yale et les ROI exactes...")
+"""Choix de la colonne ROI selon méthode de conversion : 
+        - si method "exact" : prendre dans 'yale_label'
+        - si method "approx" : prendre dans 'roi_mask'
+"""
+#Sélection de la colonne ROI
+def select_roi_source(row):
+    method = str(row.get('roi_mask_conversion_method', ''))
+        
+    #Si méthode de conversion exact -> on prend la colonne yale_label
+    if method == 'exact':
+        val = row.get('yale_label', '')
+    else:
+        val = row.get('roi_mask', '')
+        
+    return str(val)
+        
+#On met dans une nouvelle colonne les ROI Yale (traitement de la df ligne par ligne)
+df_final['unified_roi'] = df_final.apply(select_roi_source, axis=1)
+
+
 
 #Export vers CSV
 base_name = os.path.splitext(input_db_filename)[0]

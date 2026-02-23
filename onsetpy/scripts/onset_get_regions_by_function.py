@@ -155,27 +155,8 @@ def load_yale_dict():
 def pre_process_df(df):
     """
     Prépare le df pour les statistiques 
-    Choix de la colonne ROI selon méthode de conversion : 
-        - si method "exact" : prendre dans 'yale_label'
-        - si method "approx" : prendre dans 'roi_mask'
     Sépare les lignes contenant plusieurs ROI (séparés par des virgules) en plusieurs lignes (1 ROI par ligne)
     """
-    
-    #Sélection de la colonne ROI
-    def select_roi_source(row):
-        method = str(row.get('roi_mask_conversion_method', ''))
-        
-        #Si méthode de conversion exact -> on prend la colonne yale_label
-        if method == 'exact':
-            val = row.get('yale_label', '')
-        else:
-            val = row.get('roi_mask', '')
-        
-        return str(val)
-        
-    #On met dans une nouvelle colonne les ROI Yale (traitement de la df ligne par ligne)
-    df['unified_roi'] = df.apply(select_roi_source, axis=1)
-    
     
     #Parsing selon ROI (gestion listes et deduplication)
     def _parse_roi_list(val):

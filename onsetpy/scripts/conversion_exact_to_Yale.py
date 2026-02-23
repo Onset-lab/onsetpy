@@ -174,3 +174,4 @@ def mapping_yale(df_db):
     df_db['yale_distance_mm'] = dist_list
     
     return df_db
+
