@@ -67,12 +67,8 @@ def _build_arg_parser():
 def pre_process_df(df):
     """
     Prépare le df pour les statistiques 
-    Choix de la colonne ROI selon méthode de conversion : 
-        - si method "exact" : prendre dans 'yale_label'
-        - si method "approx" : prendre dans 'roi_mask'
     Sépare les lignes contenant plusieurs ROI (séparés par des virgules) en plusieurs lignes (1 ROI par ligne)
     """
-    
     
     #1. Parsing selon ROI (gestion listes et deduplication)
     def _parse_roi_list(val):
