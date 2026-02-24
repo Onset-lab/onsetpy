@@ -125,7 +125,7 @@ def main():
     print("-"*100)
     exclure_exact = questionary.confirm("Exclude exact localization ?").ask()
     if exclure_exact:
-        #On filtre le tableau : on ne garde que les lignes qui n'ont pas "exact" dans la méthode de conversion
+        #On filtre le tableau : on garde tout sauf les lignes qui ont "exact" dans la méthode de conversion
         df = df[df['roi_mask_conversion_method'] != 'exact']
 
     #Pré-traitement 
