@@ -8,6 +8,7 @@ import re
 import os 
 import conversion_exact_to_Yale 
 import openpyxl
+from dict_effects import dict_effects
 
 #Configuration
 #Nom du fichier d'entrée
@@ -19,84 +20,6 @@ db_localisation = r'G:\SPACES'
 
 #Combinaison du chemin de la DB
 path_db = os.path.join(db_localisation, input_db_filename)
-
-#Dictionnaires pour chaque niveau 1 d'effets
-dict_effects = {
-    "[Responsive rate]": [
-        ],
-    "Consciousness": [
-        "Imp Awareness",
-        "Imp Responsiveness",
-        "Imp awar & resp",
-        "Other"
-        ],
-    "Sensory": [
-        "Auditory",
-        "Gustatory",
-        "Olfactory",
-        "Somatosensory",
-        "Vestibular",
-        "Visual",
-        "Body illusion",
-        "Other"
-        ],
-    "Affective": [
-        "Anger",
-        "Anxiety",
-        "Fear",
-        "Sadness",
-        "Guilt",
-        "Mirth",
-        "Ecstatic",
-        "Mystic",
-        "Sexual",
-        "Other"
-        ],
-    "Cognitive" : [
-       "Dysphasic",
-       "Dysmnesic",
-       "Time allusion",
-       "Forced thinking",
-       "Depersonalisation",
-       "Other"
-       ],
-    "Motor Elementary": [
-        "Akinetic",
-        "Astatic",
-        "Atonic",
-        "Paretic",
-        "Dystonic",
-        "Tonic",
-        "Spasms",
-        "Myoclonic",
-        "Myoclonic-atonic",
-        "Tonic-clonic",
-        "Eye blinking",
-        "Eye & head & dev",
-        "Gyration",
-        "Other elementary motor"
-        ],
-    "Motor Complex": [
-        "Affect related behav",
-        "Axial automatisms",
-        "Distal automatisms",
-        "Proximal automatisms",
-        "Oral automatisms",
-        "Verbal automatisms",
-        "Wandering",
-        "Other complex motor",
-        ],
-    "Autonomic": [
-        "CardioVascular",
-        "Cutaneous",
-        "GastroIntestinal",
-        "Lacrimatory",
-        "Pupillary",
-        "Respiratory",
-        "Urinary",
-        "Other"
-        ],
-}
 
 
 #--- Définition de fonctions utiles ---
@@ -223,7 +146,7 @@ def cleaning_row(row_data, dict_effects):
         expanded_masks = expand_roi_mask_approx(original_mask)
         
     elif method == 'exact':
-        #Exact = on éclate par parenthèse 
+        #Exact = on éclate par parenthèse et on harmonise la notation des coord
         expanded_masks = expand_roi_mask_exact(original_mask)
         
     else :

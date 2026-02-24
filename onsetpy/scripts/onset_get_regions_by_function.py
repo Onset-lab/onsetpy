@@ -11,6 +11,7 @@ from datetime import datetime
 import json
 import os
 import questionary
+from dict_effects import dict_effects
 
 import pandas as pd
 import ast
@@ -39,86 +40,7 @@ def assert_inputs_exist(parser, paths):
     for path in paths:
         if not os.path.exists(path):
             parser.error(f"Le fichier d'entrée n'existe pas : {path}")
-            
-
-       
-#Dictionnaires pour chaque niveau 1 d'effets
-dict_effects = {
-    "[Responsive rate]": [
-        ],
-    "Consciousness": [
-        "Imp Awareness",
-        "Imp Responsiveness",
-        "Imp awar & resp",
-        "Other"
-        ],
-    "Sensory": [
-        "Auditory",
-        "Gustatory",
-        "Olfactory",
-        "Somatosensory",
-        "Vestibular",
-        "Visual",
-        "Body illusion",
-        "Other"
-        ],
-    "Affective": [
-        "Anger",
-        "Anxiety",
-        "Fear",
-        "Sadness",
-        "Guilt",
-        "Mirth",
-        "Ecstatic",
-        "Mystic",
-        "Sexual",
-        "Other"
-        ],
-    "Cognitive" : [
-       "Dysphasic",
-       "Dysmnesic",
-       "Time allusion",
-       "Forced thinking",
-       "Depersonalisation",
-       "Other"
-       ],
-    "Motor Elementary": [
-        "Akinetic",
-        "Astatic",
-        "Atonic",
-        "Paretic",
-        "Dystonic",
-        "Tonic",
-        "Spasms",
-        "Myoclonic",
-        "Myoclonic-atonic",
-        "Tonic-clonic",
-        "Eye blinking",
-        "Eye & head & dev",
-        "Gyration",
-        "Other elementary motor"
-        ],
-    "Motor Complex": [
-        "Affect related behav",
-        "Axial automatisms",
-        "Distal automatisms",
-        "Proximal automatisms",
-        "Oral automatisms",
-        "Verbal automatisms",
-        "Wandering",
-        "Other complex motor",
-        ],
-    "Autonomic": [
-        "CardioVascular",
-        "Cutaneous",
-        "GastroIntestinal",
-        "Lacrimatory",
-        "Pupillary",
-        "Respiratory",
-        "Urinary",
-        "Other"
-        ],
-}            
+                
 
 def _built_arg_parser():
     parser = argparse.ArgumentParser(
@@ -200,10 +122,13 @@ def main():
     #Chargement du dictionnaire Yale 
     df_yale_dict, roi_names = load_yale_dict()
 
-
     #Pré-traitement 
     df = pre_process_df(df)
-    
+
+    #Regle pour contourner le pb de div par 0 (nb stim null)
+    #Nombre de stim est au minimum egal au nb d'occurence 
+    #Comparaison des deux colonnes ligne par ligne et on garde le max 
+    df['nb_stimulations'] = df[['nb_stimulations', "occurrence_clinical_effect"]].max(axis=1)
 
     #Calcul du total de stimulations pour chaque région (pour le ratio) avant le filtrage
     #Somme des stimulations pour chaque région (roi_id) sur toute la DB
@@ -260,7 +185,8 @@ def main():
     if df.empty:
         print("No result found in database.") 
         return
-        
+
+
     #Bloc d'agrégation    
     agg = (
         #On rassemble les lignes par région (roi_id)

@@ -9,6 +9,7 @@ from datetime import datetime
 import json
 import os
 import questionary
+from dict_effects import dict_effects
 
 import pandas as pd
 import ast
@@ -122,9 +123,29 @@ def main():
     df = df.dropna(subset=[args.function_type])
 
 
+    #Filtrage strict par le dictionnaire 
+        #Récupération de la liste des fonctions valides pour le type demandé
+    mots_autorises = []
+    
+    if args.function_type == "effect_class":
+        #Pour les classes on prend les clés du dictionnaire 
+        mots_autorises = list(dict_effects.keys())
+
+    elif args.function_type == "effect_descriptor":
+        #Pour les descripteurs on prend la liste de tous les descripteurs du dictionnaire (valeurs de toutes les clés)
+        for descripteurs in dict_effects.values():
+            mots_autorises.extend(descripteurs)
+    
+        #On garde uniquement les fonctions valides (dans la liste des mots autorisés)
+    df = df[df[args.function_type].isin(mots_autorises)]
+
     # aggregate totals by effect_class (handle both possible column names for stimulations)
     nb_col = "nb_stimulations" if "nb_stimulations" in df.columns else "nb_stimulation"
     
+    #Regle : Nb de stimulations devient au minimum egal au nb d'occurences 
+    #Regarde ligne par ligne les deux colonnes et prend le max (si nb stim est plus petit que le nb d'occurences, on le remplace par le nb d'occurences)
+    df[nb_col] = df[[nb_col, 'occurrence_clinical_effect']].max(axis=1)
+
     agg = (
         df.groupby(args.function_type)
         .agg(
