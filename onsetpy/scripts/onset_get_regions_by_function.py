@@ -122,6 +122,12 @@ def main():
     #Chargement du dictionnaire Yale 
     df_yale_dict, roi_names = load_yale_dict()
 
+    print("-"*100)
+    exclure_exact = questionary.confirm("Exclude exact localization ?").ask()
+    if exclure_exact:
+        #On filtre le tableau : on ne garde que les lignes qui n'ont pas "exact" dans la méthode de conversion
+        df = df[df['roi_mask_conversion_method'] != 'exact']
+
     #Pré-traitement 
     df = pre_process_df(df)
 
@@ -132,11 +138,11 @@ def main():
 
     #Calcul du total de stimulations pour chaque région (pour le ratio) avant le filtrage
     #Somme des stimulations pour chaque région (roi_id) sur toute la DB
-    total_stimulations_per_roi = df.groupby('roi_id')['nb_stimulations'].sum().reset_index()
-    total_stimulations_per_roi.rename(columns={'nb_stimulations': 'total_nb_stimulations'}, inplace=True)
+    #total_stimulations_per_roi = df.groupby('roi_id')['nb_stimulations'].sum().reset_index()
+    #total_stimulations_per_roi.rename(columns={'nb_stimulations': 'total_nb_stimulations'}, inplace=True)
 
     #On colle ce total dans le tableau principal pour chaque ligne correspondante à la région (roi_id)
-    df = pd.merge(df,total_stimulations_per_roi, on='roi_id', how='left')
+    #df = pd.merge(df,total_stimulations_per_roi, on='roi_id', how='left')
 
     print("-"*100)
         
@@ -196,7 +202,7 @@ def main():
             total_occurrence_clinical_effect=("occurrence_clinical_effect", "sum"),
             #On additionne les occurrences positives pondérées pour chaque région
             total_weighted_occurrence_clinical_effect=("weighted_occurrence_clinical_effect", "sum"),
-            total_nb_stimulations=("total_nb_stimulations", "max"), 
+            total_nb_stimulations=("nb_stimulations", "sum"), 
         )
         .reset_index()
             
@@ -226,7 +232,7 @@ def main():
                 
             
     #Préparation des données pour l'affichage
-    top_n = 10
+    top_n = 696
     final_agg = (
         agg.fillna(0) #Remplace les valeurs NaN par 0 pour éviter les erreurs
         .sort_values(by="weighted_positive_ratio", ascending=False) #Tri croissant 
