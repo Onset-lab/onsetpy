@@ -239,7 +239,7 @@ def main():
             else:
                 orthanc_retrieved_id = studies_found[0]["ID"]
 
-            os.makedirs(session_folder, exist_ok=True)
+            os.makedirs(patient_folder, exist_ok=True)
             download_study_zip_by_id(
                 orthanc_url=ORTHANC_URL,
                 orthanc_study_id=orthanc_retrieved_id,
