@@ -215,10 +215,10 @@ def main():
 
     for idx, row in df.iterrows():
         an_to_find = str(row["AccessionNumber"]).strip()
-        if an_to_find[0:2] != "RA":
-            an_to_find = "RA" + an_to_find
-        if len(an_to_find) != 14:
-            an_to_find += "01"
+        # if an_to_find[0:2] != "RA":
+        #     an_to_find = "RA" + an_to_find
+        # if len(an_to_find) != 14:
+        #     an_to_find += "01"
         patient_folder = os.path.join(args.output_folder, str(row["Patient Name"]))
         output_file_path = os.path.join(patient_folder, f"{an_to_find}.zip")
         if not os.path.exists(output_file_path):
