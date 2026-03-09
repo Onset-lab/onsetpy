@@ -25,16 +25,21 @@ from onsetpy.onsetpy.io.utils import (
 
 # REMPLACEMENT DES FONCTIONS ONSETPY (Utilitaires)
 
+
 def add_overwrite_arg(parser):
-    #Ajoute l'argument --overwrite
-    parser.add_argument("--overwrite", action="store_true", help="Overwrite existing output.")
+    # Ajoute l'argument --overwrite
+    parser.add_argument(
+        "--overwrite", action="store_true", help="Overwrite existing output."
+    )
+
 
 def add_version_arg(parser):
-    #Ajoute l'argument --version
+    # Ajoute l'argument --version
     parser.add_argument("--version", action="version", version="%(prog)s 1.0")
 
+
 def assert_inputs_exist(parser, paths):
-    #Vérifie que les fichiers d'entrée existent
+    # Vérifie que les fichiers d'entrée existent
     for path in paths:
         if not os.path.exists(path):
             parser.error(f"Le fichier d'entrée n'existe pas : {path}")
@@ -65,38 +70,46 @@ def _build_arg_parser():
     add_version_arg(parser)
     return parser
 
+
 def pre_process_df(df):
     """
-    Prépare le df pour les statistiques 
+    Prépare le df pour les statistiques
     Sépare les lignes contenant plusieurs ROI (séparés par des virgules) en plusieurs lignes (1 ROI par ligne)
     """
-    
-    #1. Parsing selon ROI (gestion listes et deduplication)
-    def _parse_roi_list(val):
-        #On découpe par , et on convertit en str
-        id = str(val).split(',')
-        #Retrait des doublons 
-        unique_ids = list(set(id))  
-        return unique_ids
-    
-    #Création de la liste de ROI unifiée, à partir de la colonne unifiée (traitement ligne par ligne)
-    df['roi_list'] = df['unified_roi'].apply(_parse_roi_list)
 
-    #Calcul du poids basé sur la colonne de la ROI unifiée  
-    df['weight'] = df['roi_list'].apply(lambda x: 1/len(_parse_roi_list(x)))    
-    df["weighted_occurrence_clinical_effect"] = (df["occurrence_clinical_effect"] * df["weight"])
-        
-    #On "explose' : 1 ROI par ligne 
-    df = df.explode('roi_list').dropna(subset=['roi_list']).reset_index(drop=True)
-    
+    # 1. Parsing selon ROI (gestion listes et deduplication)
+    def _parse_roi_list(val):
+        # On découpe par , et on convertit en str
+        id = str(val).split(",")
+        # Retrait des doublons
+        unique_ids = list(set(id))
+        return unique_ids
+
+    # Création de la liste de ROI unifiée, à partir de la colonne unifiée (traitement ligne par ligne)
+    df["roi_list"] = df["unified_roi"].apply(_parse_roi_list)
+
+    df.loc[df["roi_side"] == "right", "roi_list"] = df.loc[
+        df["roi_side"] == "right", "roi_list"
+    ].apply(lambda x: [int(i) + 348 for i in x])
+
+    # Calcul du poids basé sur la colonne de la ROI unifiée
+    df["weight"] = df["roi_list"].apply(lambda x: 1 / len(_parse_roi_list(x)))
+    df["weighted_occurrence_clinical_effect"] = (
+        df["occurrence_clinical_effect"] * df["weight"]
+    )
+
+    # On "explose' : 1 ROI par ligne
+    df = df.explode("roi_list").dropna(subset=["roi_list"]).reset_index(drop=True)
+
     # On nettoie et on crée la colonne 'roi_id' proprement
-        # On ne garde que les valeurs numériques (pour éviter les erreurs de conversion)
-    df = df[df['roi_list'].astype(str).str.strip().str.isnumeric()]
-    
-        # On crée la colonne roi_id en entier
-    df['roi_id'] = df['roi_list'].astype(int)
+    # On ne garde que les valeurs numériques (pour éviter les erreurs de conversion)
+    df = df[df["roi_list"].astype(str).str.strip().str.isnumeric()]
+
+    # On crée la colonne roi_id en entier
+    df["roi_id"] = df["roi_list"].astype(int)
 
     return df
+
 
 def main():
     parser = _build_arg_parser()
@@ -104,47 +117,60 @@ def main():
 
     assert_inputs_exist(parser, [args.DB])
 
-    #Chargement de la DB 
+    # Chargement de la DB
     with open(args.DB, "r") as file:
         df = pd.read_csv(file)
 
-    #Pré-traitement 
-    df = pre_process_df(df)
+    exclure_exact = questionary.confirm("Exclude exact localization ?").ask()
+    if exclure_exact:
+        # On filtre le tableau : on garde tout sauf les lignes qui ont "exact" dans la méthode de conversion
+        df = df[df["roi_mask_conversion_method"] != "exact"]
 
-    #Filtrage pour ne garder que les lignes correspondant au label demandé
+    # Pré-traitement
+    df = pre_process_df(df)
+    pd.set_option("display.max_columns", None)
+    pd.set_option("display.max_rows", None)
+
+    # Filtrage pour ne garder que les lignes correspondant au label demandé
     df = df.loc[df["roi_id"] == args.label_id]
 
-    #Explosion des fonctions selon le type demandé (effect_class, effect_descriptor ou effect_details)
-        #Split sur la colonne choisie
-    df[args.function_type] = df[args.function_type].str.split(',')
-        #On "explose" pour avoir 1 fonction par ligne
+    # Explosion des fonctions selon le type demandé (effect_class, effect_descriptor ou effect_details)
+    # Split sur la colonne choisie
+    df[args.function_type] = df[args.function_type].str.split(",")
+    # On "explose" pour avoir 1 fonction par ligne
     df = df.explode(args.function_type)
-        #On retire les lignes où la fonction est vide ou nulle
+    # On retire les lignes où la fonction est vide ou nulle
     df = df.dropna(subset=[args.function_type])
 
-
-    #Filtrage strict par le dictionnaire 
-        #Récupération de la liste des fonctions valides pour le type demandé
+    # Filtrage strict par le dictionnaire
+    # Récupération de la liste des fonctions valides pour le type demandé
     mots_autorises = []
-    
+
     if args.function_type == "effect_class":
-        #Pour les classes on prend les clés du dictionnaire 
+        # Pour les classes on prend les clés du dictionnaire
         mots_autorises = list(dict_effects.keys())
 
     elif args.function_type == "effect_descriptor":
-        #Pour les descripteurs on prend la liste de tous les descripteurs du dictionnaire (valeurs de toutes les clés)
+        # Pour les descripteurs on prend la liste de tous les descripteurs du dictionnaire (valeurs de toutes les clés)
         for descripteurs in dict_effects.values():
             mots_autorises.extend(descripteurs)
-    
-        #On garde uniquement les fonctions valides (dans la liste des mots autorisés)
-    df = df[df[args.function_type].isin(mots_autorises)]
 
-    # aggregate totals by effect_class (handle both possible column names for stimulations)
-    nb_col = "nb_stimulations" if "nb_stimulations" in df.columns else "nb_stimulation"
-    
-    #Regle : Nb de stimulations devient au minimum egal au nb d'occurences 
-    #Regarde ligne par ligne les deux colonnes et prend le max (si nb stim est plus petit que le nb d'occurences, on le remplace par le nb d'occurences)
-    df[nb_col] = df[[nb_col, 'occurrence_clinical_effect']].max(axis=1)
+        # On garde uniquement les fonctions valides (dans la liste des mots autorisés)
+    df = df[df[args.function_type].str.contains("|".join(mots_autorises))]
+
+    # Regle : Nb de stimulations devient au minimum egal au nb d'occurences
+    # Regarde ligne par ligne les deux colonnes et prend le max (si nb stim est plus petit que le nb d'occurences, on le remplace par le nb d'occurences)
+    df["nb_stimulations"] = df[["nb_stimulations", "occurrence_clinical_effect"]].max(
+        axis=1
+    )
+    import numpy as np
+
+    df.loc[
+        df.duplicated(subset=["source_id", "nb_stimulations", args.function_type]),
+        "nb_stimulations",
+    ] = np.nan
+    print(df[df["effect_class"] == "Sensory"])
+    print(f"Number of rows: {len(df[df['effect_class'] == 'Sensory'])}")
 
     agg = (
         df.groupby(args.function_type)
@@ -154,15 +180,13 @@ def main():
                 "weighted_occurrence_clinical_effect",
                 "sum",
             ),
-            total_nb_stimulations=(nb_col, "sum"),
+            total_nb_stimulations=("nb_stimulations", "sum"),
         )
         .reset_index()
-        # Pour chaque fonction pour un label X: sum(occurence_clinical_effect * (1/nb_regions)) / sum(nb_stimulations)
         .assign(
             total_positive_ratio=lambda x: x["total_occurrence_clinical_effect"]
             / x["total_nb_stimulations"]
         )
-        # Pour chaque fonction pour un label X: sum(occurence_clinical_effect * (1/nb_regions)) / sum(nb_stimulations)
         .assign(
             weighted_positive_ratio=lambda x: x[
                 "total_weighted_occurrence_clinical_effect"
@@ -188,7 +212,6 @@ def main():
             f"{'N°':<4} {'Fonction Positive':<30} {'Pondéré (%)':>11} {'Brut (%)':>9} {'Nb stim':>8} {'Tot pond.':>10} {'Tot':>7}"
         )
         print("-" * 86)
-
         for i, row in sorted_agg.head(n_show).iterrows():
             effect = str(row.get(args.function_type, "<inconnu>"))
             weighted_ratio = float(row.get("weighted_positive_ratio", 0.0) or 0.0)
@@ -208,5 +231,6 @@ def main():
                 f"{tot_weighted:10.2f} {tot:7.2f}"
             )
         print("-" * 86)
+
 
 main()
