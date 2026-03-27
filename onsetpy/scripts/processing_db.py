@@ -153,14 +153,14 @@ def cleaning_row(row_data, dict_effects):
         #Sinon, on garde tel quel
         expanded_masks = [original_mask] #A GARDER OU SUPPRIMER 
 
-    #Filtrage des ROI > 696
+    #Filtrage des ROI > 690
     filtered_masks = []
     if method!= 'exact': #On ne filtre pas les coordonnées exactes
         for mask in expanded_masks:
             mask_str = str(mask).strip()
             try:
                 val = int(mask_str)
-                if 0 < val <= 696:
+                if 0 < val <= 690:
                     filtered_masks.append(mask_str)
             except ValueError:
                 pass #Si ca plante on ignore  
@@ -254,7 +254,46 @@ def cleaning_row(row_data, dict_effects):
             row_data[col] = clean_data
         
     return row_data
-         
+
+def cleaning_occurrence_clinical_effect(df):
+    """
+    Remplace les occurrences vides par l'occurrence de la ligne parente 
+    (indiquée dans la colonne complement_parameters_result_id) si complement_parameters_result_id == 1,
+    uniquement si les deux appartiennent au même article (même source_id)
+    """
+    #Df pour stocker les info parent
+    parents_df = df[['id', 'source_id', 'occurrence_clinical_effect']].copy()
+
+    #On renomme id en complement_parameters_result_id pour faire le lien avec la colonne du df d'origine
+    parents_df = parents_df.rename(columns={
+        'id': 'complement_parameters_result_id',
+        'occurrence_clinical_effect': 'occurrence_parent' #On renomme pour différencier de la colonne d'origine
+        })
+
+    #Fusion du df d'origine avec le df des parents pour récupérer l'occurrence_clinical_effect des parents
+    df = df.merge(parents_df, on=['complement_parameters_result_id', 'source_id'], how='left')
+
+    #On repère les lignes où occurrence_clinical_effect est vide ou nul
+    #Si occ est vide ou nul et complement_parameters_result_id == 1
+    condition_a_remplacer = ((df['occurrence_clinical_effect'] == '')|(df['occurrence_clinical_effect']=='0')) & (df['complement_parameters'] == 1)
+
+    #On insere ou on remplace par l'occurrence_clinical_effect du parent
+    df.loc[condition_a_remplacer, 'occurrence_clinical_effect'] = df.loc[condition_a_remplacer, 'occurrence_parent']
+
+    #On supprime la colonne temporaire d'occurrence_parent
+    df = df.drop(columns=['occurrence_parent'])
+
+    #Conversion de la colonne occurrence_clinical_effect en numérique (entier), les valeurs non convertibles deviennent NaN puis 0
+    df['occurrence_clinical_effect'] = pd.to_numeric(df['occurrence_clinical_effect'], errors='coerce').fillna(0)
+
+    #Suppression des lignes à 0
+    df = df[df['occurrence_clinical_effect'] > 0].reset_index(drop=True)
+
+    #On supprime les colonnes qui ne sont plus nécessaires pour la suite du traitement
+    df = df.drop(columns=['complement_parameters_result_id', 'complement_parameters'])
+ 
+    return df
+
        
 #--- EXECUTION --- 
     
@@ -262,7 +301,7 @@ def cleaning_row(row_data, dict_effects):
 connexion = sqlite3.connect(path_db)
 
 #Sélection des colonnes souhaitées 
-query = """SELECT id, source_id, roi_side, roi_description, roi_mask, roi_mask_conversion_method, effect_class, effect_descriptor, effect_details, occurrence_clinical_effect, nb_stimulations FROM Results"""
+query = """SELECT id, source_id, roi_side, roi_description, roi_mask, roi_mask_conversion_method, effect_class, effect_descriptor, effect_details, occurrence_clinical_effect, complement_parameters, complement_parameters_result_id FROM Results"""
 
 df = pd.read_sql_query(query, connexion)
 
@@ -300,6 +339,9 @@ for idx, row in df.iterrows():
 #Création du nouveau tableau
 processed_df = pd.DataFrame(final_rows)
 
+#Nettoyage des occurence_clinical_effect vide : attribution ou suppression 
+processed_df = cleaning_occurrence_clinical_effect(processed_df)
+
 print(f"Lignes supprimées car ROI vide : {len(deleted_id)}")
 if deleted_id:
     print(f"IDs supprimés : {deleted_id}")
@@ -309,7 +351,7 @@ print("Lancement de la conversion des coordonnées exacts en labels Yale...")
 #Appel de la fonction qui convertie la position exacte en label Yale
 df_final = conversion_exact_to_Yale.mapping_yale(processed_df)
 
-print("Création de la colonne 'unified_roi_mask' qui regroupe les ROI Yale et les ROI exactes...")
+print("Création de la colonne 'roi_unified' qui regroupe les ROI Yale et les ROI exactes...")
 """Choix de la colonne ROI selon méthode de conversion : 
         - si method "exact" : prendre dans 'yale_label'
         - si method "approx" : prendre dans 'roi_mask'
@@ -327,7 +369,7 @@ def select_roi_source(row):
     return str(val)
         
 #On met dans une nouvelle colonne les ROI Yale (traitement de la df ligne par ligne)
-df_final['unified_roi'] = df_final.apply(select_roi_source, axis=1)
+df_final['roi_unified'] = df_final.apply(select_roi_source, axis=1)
 
 
 

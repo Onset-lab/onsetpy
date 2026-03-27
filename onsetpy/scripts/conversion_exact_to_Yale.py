@@ -11,7 +11,7 @@ import re
 def mapping_yale(df_db):
     
     #Fichiers des coordonnées Yale (X,Y,Z, nom de la parcel)
-    coords_parcels = "https://raw.githubusercontent.com/YaleBrainAtlas/YaleBrainAtlas/refs/heads/master/data/YBA_696parcels/YBA_696_whole_positions.csv"
+    coords_parcels = "https://raw.githubusercontent.com/YaleBrainAtlas/YaleBrainAtlas/refs/heads/master/data/YBA_690parcels/YBA_690_whole_positions.csv"
     
     #Noms des colonnes des fichiers de coordonnées 
     COL_COORD_X = 'x'
@@ -20,7 +20,7 @@ def mapping_yale(df_db):
     COL_COORD_KEY = 'parcel'
     
     #Fichier dictionnaire qui permet d'assigner une valeur au nom de parcel 
-    dict_file_path = "https://raw.githubusercontent.com/YaleBrainAtlas/YaleBrainAtlas/refs/heads/master/data/YBA_696parcels/YBA_696_parcel_dict.csv"
+    dict_file_path = "https://raw.githubusercontent.com/YaleBrainAtlas/YaleBrainAtlas/refs/heads/master/data/YBA_690parcels/YBA_690_parcel_dict.csv"
     
     #Noms des colonnes dans le dictionnaire 
     COL_DICT_KEY = 'Name'
@@ -38,22 +38,22 @@ def mapping_yale(df_db):
         #Définition de la matrice fournie par Lancaster 
         #ICBM to TAL 
         
-        icbm_spm = np.array([
-            [0.9254, 0.0024, -0.0118, -1.0207],
-            [-0.0048, 0.9316, -0.0871, -1.7667],
-            [0.0152, 0.0883, 0.8924, 4.0926],
+        icbm_pooled = np.array([
+            [0.9357, 0.0029, -0.0072, -1.0423],
+            [-0.0065, 0.9396, -0.0726, -1.3940],
+            [0.0103, 0.0752, 0.8967, 3.6475],
             [0.0000, 0.0000, 0.0000, 1.0000]
         ])
         
         #Inversion de la matrice pour avoir TAL -> ICBM/MNI
-        icbm_spm_inv = np.linalg.inv(icbm_spm)
+        icbm_pooled_inv = np.linalg.inv(icbm_pooled)
         
         #Préparation du vecteur coordonnée [x, y, z, 1]
         #1 permet la multiplication matricielle 4x4
         point_tal = np.array(xyz_list + [1])
         
         #Application de la transformation (produit matriciel)
-        point_mni = np.dot(icbm_spm_inv, point_tal)
+        point_mni = np.dot(icbm_pooled_inv, point_tal)
         
         #On retourne x, y, z dans la liste xyz et on enlève le 1 de fin
         return point_mni[:3].tolist()
