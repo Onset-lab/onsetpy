@@ -1,125 +1,520 @@
 <!DOCTYPE html>
-<html lang="en"></html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>SurgeryFlow Report</title>
+    {%- set n_total = bundles | length -%}
+    {%- set n_low = bundles | selectattr("status", "equalto", "low") | list | length -%}
+    {%- set n_missing = bundles | selectattr("status", "equalto", "missing") | list | length -%}
+    {%- set n_ok = n_total - n_low - n_missing -%}
+    {%- set gauge_max = 1.5 -%}
     <style>
+        :root {
+            --navy: #0b2545;
+            --blue: #13315c;
+            --accent: #3fa9f5;
+            --green: #2e9e5b;
+            --green-bg: #e6f5ec;
+            --red: #d1342f;
+            --red-bg: #fdeceb;
+            --grey: #6b7785;
+            --grey-bg: #eef1f5;
+            --line: #dfe4ea;
+            --text: #1f2a37;
+        }
+
         @page {
             size: letter;
-            margin-left: 0;
-            margin-right: 0;
-            background-color: #f4f4f9 !important;
-            @top-center {
+            margin: 0.75in 0.6in 0.7in 0.6in;
+            @top-left {
+                content: "SurgeryFlow · Tractography report";
+                font-family: "Lato", "Helvetica Neue", Arial, sans-serif;
+                font-size: 8pt;
+                color: #6b7785;
+                vertical-align: bottom;
+                padding-bottom: 8pt;
+            }
+            @top-right {
                 content: "CHUM Research Center";
+                font-family: "Lato", "Helvetica Neue", Arial, sans-serif;
+                font-size: 8pt;
+                color: #6b7785;
+                vertical-align: bottom;
+                padding-bottom: 8pt;
             }
-            @bottom-center {
-                content: "{{patient_name}} {{patient_id}}";
+            @bottom-left {
+                content: "ID: {{ patient_id }}  ·  {{ date }}";
+                font-family: "Lato", "Helvetica Neue", Arial, sans-serif;
+                font-size: 8pt;
+                color: #6b7785;
+            }
+            @bottom-right {
+                content: "Page " counter(page) " / " counter(pages);
+                font-family: "Lato", "Helvetica Neue", Arial, sans-serif;
+                font-size: 8pt;
+                color: #6b7785;
             }
         }
+        @page cover {
+            margin: 0 0 0.7in 0;
+            @top-left { content: none; }
+            @top-right { content: none; }
+            @bottom-left { padding-left: 0.6in; }
+            @bottom-right { padding-right: 0.6in; }
+        }
+
+        * { box-sizing: border-box; }
         body {
-            font-family: Arial, sans-serif;
-            font-size: small;
-            margin: 0in;
-            padding: 0in;
-            color: rgb(51, 51, 51);
+            font-family: "Lato", "Helvetica Neue", Arial, sans-serif;
+            font-size: 9.5pt;
+            line-height: 1.4;
+            color: var(--text);
+            margin: 0;
         }
-        .page {
-            padding-left: 1in;
-            padding-right: 1in;
+        h2 {
+            font-size: 15pt;
+            color: var(--navy);
+            margin: 0 0 4pt 0;
         }
-        .header {
+        .section-sub {
+            color: var(--grey);
+            margin: 0 0 14pt 0;
+        }
+        .page-break { page-break-before: always; }
+
+        /* ---------- Cover ---------- */
+        .cover { page: cover; }
+        .cover-band {
+            background: linear-gradient(135deg, #0b2545 0%, #13315c 60%, #1d4e89 100%);
+            color: white;
+            padding: 0.45in 0.6in 0.35in 0.6in;
+        }
+        .cover-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo-box {
+            background: white;
+            border-radius: 6pt;
+            padding: 5pt 9pt;
+        }
+        .logo-box img { height: 34pt; display: block; }
+        .cover-date {
+            font-size: 9pt;
+            opacity: 0.8;
+            text-align: right;
+        }
+        .cover-title {
+            margin-top: 22pt;
+            font-size: 28pt;
+            font-weight: bold;
+            letter-spacing: 0.5pt;
+        }
+        .cover-title span { color: var(--accent); }
+        .cover-subtitle {
+            font-size: 11pt;
+            opacity: 0.85;
+            margin-top: 2pt;
+        }
+        .cover-body { padding: 0.3in 0.6in 0 0.6in; }
+
+        .patient-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10pt;
+            margin-bottom: 14pt;
+        }
+        .field {
+            border: 1px solid var(--line);
+            border-radius: 6pt;
+            padding: 7pt 10pt;
+        }
+        .field .label {
+            font-size: 7pt;
+            text-transform: uppercase;
+            letter-spacing: 0.8pt;
+            color: var(--grey);
+        }
+        .field .value {
+            font-size: 11pt;
+            font-weight: bold;
+            color: var(--navy);
+        }
+
+        .brain-card {
+            background: #000;
+            border-radius: 8pt;
+            padding: 8pt;
+            text-align: center;
+        }
+        .brain-card img {
+            max-width: 100%;
+            max-height: 4.6in;
+            display: block;
+            margin: 0 auto;
+        }
+        .caption {
+            text-align: center;
+            font-size: 8pt;
+            color: var(--grey);
+            margin-top: 4pt;
+        }
+
+        .kpis {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10pt;
+            margin-top: 14pt;
+        }
+        .kpi {
+            border-radius: 6pt;
+            padding: 9pt 12pt;
+            border-left: 4pt solid;
+        }
+        .kpi .num { font-size: 20pt; font-weight: bold; line-height: 1.1; }
+        .kpi .lbl { font-size: 8pt; text-transform: uppercase; letter-spacing: 0.6pt; }
+        .kpi.ok { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+        .kpi.low { background: var(--red-bg); border-color: var(--red); color: var(--red); }
+        .kpi.missing { background: var(--grey-bg); border-color: var(--grey); color: var(--grey); }
+
+        .alert {
+            margin-top: 12pt;
+            padding: 8pt 12pt;
+            border-radius: 6pt;
+            background: var(--red-bg);
+            color: var(--red);
+            font-size: 9pt;
+        }
+        .alert.ok { background: var(--green-bg); color: var(--green); }
+
+        /* ---------- Badges & gauge ---------- */
+        .badge {
+            display: inline-block;
+            font-size: 7pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.6pt;
+            padding: 2pt 7pt;
+            border-radius: 10pt;
+            white-space: nowrap;
+        }
+        .badge.ok { background: var(--green-bg); color: var(--green); }
+        .badge.low { background: var(--red-bg); color: var(--red); }
+        .badge.missing { background: var(--grey-bg); color: var(--grey); }
+
+        .gauge {
+            position: relative;
+            height: 9pt;
+            background: var(--grey-bg);
+            border-radius: 5pt;
+        }
+        .gauge .fill {
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            border-radius: 5pt;
+        }
+        .gauge .fill.ok { background: var(--green); }
+        .gauge .fill.low { background: var(--red); }
+        .gauge .tick {
+            position: absolute;
+            top: -3pt; bottom: -3pt;
+            width: 1.5pt;
+        }
+        .gauge .tick.normal { background: var(--navy); }
+        .gauge .tick.threshold { background: var(--red); opacity: 0.6; }
+        .gauge-legend {
+            position: relative;
+            height: 10pt;
+            font-size: 6.5pt;
+            color: var(--grey);
+            margin-top: 3pt;
+        }
+        .gauge-legend span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+
+        /* ---------- Summary table ---------- */
+        table.summary {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8pt;
+            line-height: 1.15;
+        }
+        table.summary th {
+            text-align: left;
+            font-size: 6.5pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5pt;
+            color: var(--grey);
+            border-bottom: 1.5pt solid var(--navy);
+            padding: 4pt 6pt;
+        }
+        table.summary td {
+            padding: 2.5pt 6pt;
+            border-bottom: 1px solid var(--line);
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+        table.summary tr:nth-child(even) td { background: #f8fafc; }
+        table.summary td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        table.summary th.num { text-align: right; }
+        table.summary td.bar { width: 24%; }
+        table.summary .gauge { height: 7pt; }
+        table.summary .gauge .tick { top: -2pt; bottom: -2pt; }
+        table.summary .badge { font-size: 6.5pt; padding: 1.5pt 6pt; }
+        .bundle-name { font-weight: bold; color: var(--navy); }
+        a.bundle-link { color: inherit; text-decoration: none; }
+        a.bundle-link .bundle-name::after {
+            content: " ›";
+            color: var(--accent);
+        }
+
+        /* ---------- Bundle cards ---------- */
+        .bundle {
+            border: 1px solid var(--line);
+            border-radius: 8pt;
+            margin-bottom: 14pt;
+            page-break-inside: avoid;
+            overflow: hidden;
+            height: 4.45in;
+        }
+        .bundle.low { border-color: var(--red); }
+        .bundle-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8pt 12pt;
+            border-bottom: 1px solid var(--line);
+            background: #f8fafc;
+        }
+        .bundle.low .bundle-head { background: var(--red-bg); }
+        .bundle-head .title { font-size: 12pt; font-weight: bold; color: var(--navy); }
+        .bundle-head .code { color: var(--grey); font-size: 8.5pt; margin-left: 6pt; }
+        .bundle-body {
+            display: flex;
+            padding: 10pt 12pt;
+            gap: 14pt;
+        }
+        .bundle-image {
+            flex: 0 0 58%;
+            background: #000;
+            border-radius: 6pt;
+            height: 3.55in;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
-            border-bottom: 2px solid #ccc;
+            overflow: hidden;
         }
-        .header img {
-            max-width: 150px;
-            height: auto;
-            margin-right: 20px;
+        .bundle-image img { max-width: 100%; max-height: 3.55in; display: block; }
+        .bundle-image.empty { background: var(--grey-bg); color: var(--grey); font-style: italic; }
+        .bundle-info { flex: 1; margin-left: 14pt; }
+        .info-label {
+            font-size: 7pt;
+            text-transform: uppercase;
+            letter-spacing: 0.8pt;
+            color: var(--grey);
+            margin: 0 0 5pt 0;
         }
-        .header h1 {
-            flex: 1;
-            text-align: center;
-            margin: 0;
-            color: rgb(0, 64, 113);
+        .chips { margin-bottom: 14pt; }
+        .chip {
+            display: inline-block;
+            background: #e8f1fb;
+            color: var(--blue);
+            border-radius: 10pt;
+            padding: 3pt 8pt;
+            margin: 0 3pt 4pt 0;
+            font-size: 8.5pt;
         }
-        .patient-info {
-            margin: 20px 0;
-            background-color: #ffffff;
-            padding: 15px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+        .ratio-big { font-size: 22pt; font-weight: bold; line-height: 1; margin-bottom: 6pt; }
+        .ratio-big.ok { color: var(--green); }
+        .ratio-big.low { color: var(--red); }
+        .ratio-big.missing { color: var(--grey); }
+        .ratio-big small { font-size: 8pt; font-weight: normal; color: var(--grey); }
+        .stats { width: 100%; margin-top: 8pt; font-size: 8.5pt; border-collapse: collapse; }
+        .stats td { padding: 3pt 0; border-bottom: 1px dotted var(--line); }
+        .stats td.v { text-align: right; font-weight: bold; }
+        .warning {
+            margin-top: 10pt;
+            padding: 7pt 9pt;
+            background: var(--red-bg);
+            border-left: 3pt solid var(--red);
+            border-radius: 4pt;
+            color: var(--red);
+            font-size: 8.5pt;
+            font-weight: bold;
         }
-        .screenshot {
-            text-align: center;
-            margin-bottom: 20px;
+        .warning.missing { background: var(--grey-bg); border-color: var(--grey); color: var(--grey); }
+
+        /* ---------- Disclaimer ---------- */
+        .disclaimer {
+            font-size: 8pt;
+            color: var(--grey);
+            border-top: 1px solid var(--line);
+            padding-top: 10pt;
+            text-align: justify;
         }
-        .screenshot img {
-            max-height: 400px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            background-color: #ffffff;
-        }
-        table, th, td {
-            border: 1px solid #ccc;
-        }
-        th {
-            background-color: rgb(114, 191, 68);
-            color: white;
-        }
-        th, td {
-            padding: 10px;
-            text-align: center;
-            width: 30%;
+        .disclaimer h3 {
+            font-size: 9pt;
+            color: var(--navy);
+            margin: 0 0 4pt 0;
         }
     </style>
 </head>
 <body>
-    <div class="page">
-        <div class="header">
-            <img src="https://www.chumontreal.qc.ca/sites/default/files/logos/logo_crchum_versionlongue_sans_fond.png" alt="Logo CRCHUM">
-            <h1>SurgeryFlow Report</h1>
+
+{%- macro gauge(b) -%}
+    <div class="gauge">
+        {% if b.ratio is not none %}
+            {% set w = [b.ratio, gauge_max] | min / gauge_max * 100 %}
+            <div class="fill {{ b.status }}" style="width: {{ '%.1f' | format(w) }}%"></div>
+        {% endif %}
+        <div class="tick threshold" style="left: {{ '%.1f' | format(volume_threshold / gauge_max * 100) }}%"></div>
+        <div class="tick normal" style="left: {{ '%.1f' | format(100 / gauge_max) }}%"></div>
+    </div>
+{%- endmacro -%}
+
+{%- macro status_label(b) -%}
+    {%- if b.status == "ok" -%}Normal{%- elif b.status == "low" -%}Reduced{%- else -%}Not reconstructed{%- endif -%}
+{%- endmacro -%}
+
+{%- macro fmt_vol(v) -%}
+    {%- if v is not none -%}{{ "{:,.0f}".format(v).replace(",", " ") }} mm³{%- else -%}—{%- endif -%}
+{%- endmacro -%}
+
+    {# ======================= COVER ======================= #}
+    <section class="cover">
+        <div class="cover-band">
+            <div class="cover-top">
+                <div class="logo-box">
+                    <img src="https://www.chumontreal.qc.ca/sites/default/files/logos/logo_crchum_versionlongue_sans_fond.png" alt="CRCHUM">
+                </div>
+                <div class="cover-date">Report generated on<br><strong>{{ date }}</strong></div>
+            </div>
+            <div class="cover-title">Surgery<span>Flow</span></div>
+            <div class="cover-subtitle">White matter bundle reconstruction report</div>
         </div>
 
-        <div class="patient-info">
-            <p><strong>Patient Name:</strong> {{patient_name}} <span style="float: right;"><strong>Date:</strong> {{date}}</span></p>
-            <p><strong>Patient ID:</strong> {{patient_id}}</p>
-        </div>
+        <div class="cover-body">
+            <div class="patient-grid">
+                <div class="field"><div class="label">Patient</div><div class="value">{{ patient_name }}</div></div>
+                <div class="field"><div class="label">Patient ID</div><div class="value">{{ patient_id }}</div></div>
+                <div class="field"><div class="label">Date</div><div class="value">{{ date }}</div></div>
+            </div>
 
-        <div class="bundle-status">
+            <div class="brain-card">
+                <img src="file://{{ screenshot }}" alt="Global brain screenshot">
+            </div>
+            <div class="caption">Overview of all reconstructed bundles</div>
+
+            <div class="kpis">
+                <div class="kpi ok"><div class="num">{{ n_ok }}<span style="font-size: 11pt;"> / {{ n_total }}</span></div><div class="lbl">Normal volume</div></div>
+                <div class="kpi low"><div class="num">{{ n_low }}</div><div class="lbl">Reduced (&lt; {{ "%.0f" | format(volume_threshold * 100) }}%)</div></div>
+                <div class="kpi missing"><div class="num">{{ n_missing }}</div><div class="lbl">Not reconstructed</div></div>
+            </div>
+
             {% if missing_bundles %}
-                <p>The following bundles could not be reconstructed:</p>
-                <ul>
-                    {% for bundle in missing_bundles %}
-                        <li>{{ bundle }}</li>
-                    {% endfor %}
-                </ul>
+                <div class="alert"><strong>Not reconstructed:</strong> {{ bundles | rejectattr("reconstructed") | map(attribute="display_name") | join(", ") }}</div>
             {% else %}
-                <p>All bundles have been successfully reconstructed.</p>
+                <div class="alert ok">All bundles have been successfully reconstructed.</div>
             {% endif %}
         </div>
+    </section>
 
-        <div class="screenshot">
-            <img src="file://{{screenshot}}" alt="Brain screenshot" style="max-width:100%; height:auto">
+    {# ======================= SUMMARY ======================= #}
+    <section class="page-break">
+        <h2>Bundle volumes</h2>
+        <p class="section-sub">
+            Patient volume compared to the normative volume. The dark tick marks the normative volume (100%),
+            the red tick marks the alert threshold ({{ "%.0f" | format(volume_threshold * 100) }}%).
+            Click on a bundle name to go to its page.
+        </p>
+        <table class="summary">
+            <tr>
+                <th>Bundle</th>
+                <th class="num">Patient</th>
+                <th class="num">Normative</th>
+                <th class="num">Ratio</th>
+                <th>Patient / normative</th>
+                <th>Status</th>
+            </tr>
+            {% for b in bundles %}
+            <tr>
+                <td>
+                    <a class="bundle-link" href="#{{ b.anchor }}"><span class="bundle-name">{{ b.display_name }}</span></a>
+                </td>
+                <td class="num">{{ fmt_vol(b.patient_volume) }}</td>
+                <td class="num">{{ fmt_vol(b.normal_volume) }}</td>
+                <td class="num"><strong>{{ "%.0f%%" | format(b.ratio * 100) if b.ratio is not none else "—" }}</strong></td>
+                <td class="bar">{{ gauge(b) }}</td>
+                <td><span class="badge {{ b.status }}">{{ status_label(b) }}</span></td>
+            </tr>
+            {% endfor %}
+        </table>
+    </section>
+
+    {# ======================= BUNDLES (2 per page) ======================= #}
+    {% for pair in bundle_pages %}
+    <section class="page-break">
+        {% for b in pair %}
+        <div class="bundle {{ b.status }}" id="{{ b.anchor }}">
+            <div class="bundle-head">
+                <div>
+                    <span class="title">{{ b.display_name }}</span>
+                    {% if b.display_name != b.name %}<span class="code">{{ b.name }}</span>{% endif %}
+                </div>
+                <span class="badge {{ b.status }}">{{ status_label(b) }}</span>
+            </div>
+            <div class="bundle-body">
+                {% if b.screenshot %}
+                    <div class="bundle-image"><img src="file://{{ b.screenshot }}" alt="{{ b.name }}"></div>
+                {% else %}
+                    <div class="bundle-image empty">No screenshot available</div>
+                {% endif %}
+
+                <div class="bundle-info">
+                    <p class="info-label">Functions</p>
+                    <div class="chips">
+                        {% for f in b.functions %}<span class="chip">{{ f }}</span>{% else %}<span class="chip">—</span>{% endfor %}
+                    </div>
+
+                    <p class="info-label">Volume vs. normative</p>
+                    <div class="ratio-big {{ b.status }}">
+                        {{ "%.0f%%" | format(b.ratio * 100) if b.ratio is not none else "—" }}
+                        <small>of normative</small>
+                    </div>
+                    {{ gauge(b) }}
+                    <div class="gauge-legend">
+                        <span style="left: 0%; transform: none;">0%</span>
+                        <span style="left: {{ '%.1f' | format(100 / gauge_max) }}%">100%</span>
+                        <span style="left: 100%; transform: translateX(-100%);">{{ "%.0f" | format(gauge_max * 100) }}%</span>
+                    </div>
+
+                    <table class="stats">
+                        <tr><td>Patient</td><td class="v">{{ fmt_vol(b.patient_volume) }}</td></tr>
+                        <tr><td>Normative</td><td class="v">{{ fmt_vol(b.normal_volume) }}</td></tr>
+                    </table>
+
+                    {% if b.warning %}
+                        <div class="warning {{ b.status }}">⚠ {{ b.warning }}</div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
+        {% endfor %}
+    </section>
+    {% endfor %}
 
+    {# ======================= DISCLAIMER ======================= #}
+    <section class="page-break">
         <div class="disclaimer">
-            <h2>Medical Disclaimer</h2>
+            <h3>Medical Disclaimer</h3>
             <p>All content found in this document, including: text, images, audio, or other formats were created for informational
                 purposes only. The content is not intended to be a substitute for professional medical advice, diagnosis, or treatment.
                 Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a
                 medical condition. Never disregard professional medical advice or delay in seeking it because of something you have read
-                in this document.
-                <br>This document does not recommend or endorse any specific tests, physicians, products, procedures, opinions, or other
+                in this document.</p>
+            <p>This document does not recommend or endorse any specific tests, physicians, products, procedures, opinions, or other
                 information that may be mentioned herein. Reliance on any information provided in this document is solely at your own risk.</p>
         </div>
-    </div>
+    </section>
 </body>
 </html>

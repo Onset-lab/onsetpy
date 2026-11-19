@@ -44,9 +44,13 @@ class TestSurgeryflowReport(TestCase):
         mock_template = MagicMock()
         mock_get_template.return_value = mock_template
 
-        missing_bundles = ["Bundle A", "Bundle B"]
+        bundles = [
+            {"name": "AF_L", "reconstructed": True},
+            {"name": "AF_R", "reconstructed": False},
+            {"name": "CST_L", "reconstructed": True},
+        ]
         screenshot_path = "/path/to/screenshot.png"
-        self.surgery_report.render(missing_bundles, screenshot_path)
+        self.surgery_report.render(bundles, screenshot_path)
 
         mock_get_template.assert_called_once_with("surgeryflow_report.html")
         mock_template.render.assert_called_once_with(
@@ -55,7 +59,10 @@ class TestSurgeryflowReport(TestCase):
                 "patient_id": self.patient_id,
                 "date": self.date,
                 "screenshot": screenshot_path,
-                "missing_bundles": missing_bundles,
+                "bundles": bundles,
+                "bundle_pages": [bundles[:2], bundles[2:]],
+                "missing_bundles": ["AF_R"],
+                "volume_threshold": 0.2,
             }
         )
         self.assertIsNotNone(self.surgery_report.html_content)

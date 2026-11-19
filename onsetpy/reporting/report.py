@@ -62,13 +62,16 @@ class SurgeryflowReport(Report):
     def __init__(self, patient_name, patient_id, date):
         super().__init__(patient_name, patient_id, date)
 
-    def render(self, missing_bundles, screenshot_path):
+    def render(self, bundles, screenshot_path, volume_threshold=0.2):
         """
-        Renders the SurgeryFlow report using the provided missing bundles list and screenshot path.
+        Renders the SurgeryFlow report.
 
         Args:
-            missing_bundles (dict): List of missing bundles to be included in the report.
-            screenshot_path (str): The file path to the screenshot image.
+            bundles (list of dict): Bundles to display. Each dict contains the keys
+                name, display_name, functions, patient_volume, normal_volume, ratio,
+                reconstructed, status, warning and screenshot.
+            screenshot_path (str): The file path to the global brain screenshot.
+            volume_threshold (float): Ratio below which a bundle volume is flagged.
 
         Returns:
             None
@@ -79,7 +82,10 @@ class SurgeryflowReport(Report):
             "patient_id": self.patient_id,
             "date": self.date,
             "screenshot": screenshot_path,
-            "missing_bundles": missing_bundles,
+            "bundles": bundles,
+            "bundle_pages": [bundles[i : i + 2] for i in range(0, len(bundles), 2)],
+            "missing_bundles": [b["name"] for b in bundles if not b["reconstructed"]],
+            "volume_threshold": volume_threshold,
         }
         self.html_content = template.render(data)
 
